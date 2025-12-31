@@ -50,12 +50,12 @@
   }
 
   async function handleDelete(fingerprint: string) {
-    if (!confirm("Delete this key? This cannot be undone!")) {
-      return;
-    }
+    console.log("handleDelete called with fingerprint:", fingerprint);
 
+    console.log("Calling deleteKey API...");
     try {
       const result = await deleteKey(fingerprint);
+      console.log("deleteKey result:", result);
       if (result.success) {
         alert("Key deleted successfully!");
         await loadKeys();
@@ -63,6 +63,7 @@
         alert("Failed to delete: " + (result.error || "Unknown error"));
       }
     } catch (e) {
+      console.error("Delete error:", e);
       alert("Error: " + String(e));
     }
   }
@@ -101,17 +102,17 @@
   }
 
   async function handleExport(fingerprint: string, isPrivate: boolean) {
+    alert(`EXPORT CLICKED! Type: ${isPrivate ? "PRIVATE" : "PUBLIC"}`);
+    console.log(
+      "handleExport called with fingerprint:",
+      fingerprint,
+      "isPrivate:",
+      isPrivate
+    );
     try {
-      if (
-        isPrivate &&
-        !confirm(
-          "Warning: You are about to export your PRIVATE key. Keep this file safe! Continue?"
-        )
-      ) {
-        return;
-      }
-
+      console.log("Calling exportKey API...");
       const res = await exportKey(fingerprint, isPrivate);
+      console.log("exportKey result:", res);
 
       if (!res.success || !res.data) {
         alert("Failed to get key content: " + (res.error || "Unknown error"));
@@ -126,13 +127,16 @@
       });
 
       if (!savePath) {
+        console.log("Save path cancelled");
         alert("Save cancelled");
         return;
       }
 
+      console.log("Writing to file:", savePath);
       await writeTextFile(savePath, res.data);
       alert(`Key exported successfully to:\n${savePath}`);
     } catch (e) {
+      console.error("Export error:", e);
       alert("Error: " + String(e));
     }
   }
@@ -201,6 +205,22 @@
     neverExpire = true;
     keyType = "rsa4096";
   }
+
+  // Expose functions to window for onclick HTML attributes
+  if (typeof window !== "undefined") {
+    (window as any).exportPublicKey = (fingerprint: string) => {
+      console.log("WINDOW exportPublicKey called:", fingerprint);
+      handleExport(fingerprint, false);
+    };
+    (window as any).exportPrivateKey = (fingerprint: string) => {
+      console.log("WINDOW exportPrivateKey called:", fingerprint);
+      handleExport(fingerprint, true);
+    };
+    (window as any).deleteThisKey = (fingerprint: string) => {
+      console.log("WINDOW deleteThisKey called:", fingerprint);
+      handleDelete(fingerprint);
+    };
+  }
 </script>
 
 <div class="container">
@@ -224,50 +244,48 @@
       <p>Click "Generate New Key" to create your first PGP key</p>
     </div>
   {:else}
-    <div class="keys-grid">
+    <div class="keys-list">
       {#each keys as key}
-        <div class="key-card">
-          <div class="key-header">
-            <span class="key-icon">{key.is_private ? "🔐" : "🔓"}</span>
-            <div class="key-info">
-              <h3>{key.user_id.name}</h3>
-              <p>{key.user_id.email}</p>
+        <div class="key-item">
+          <div class="key-main">
+            <div class="key-icon-wrapper">
+              <span class="key-type-icon">{key.is_private ? "🔐" : "🔓"}</span>
+            </div>
+            <div class="key-content">
+              <h3 class="key-name">{key.user_id.name}</h3>
+              <p class="key-email">{key.user_id.email}</p>
+              <div class="key-meta">
+                <span class="meta-item">🔑 {key.key_type}</span>
+                <span class="meta-item"
+                  >🔖 {key.fingerprint.substring(0, 16)}...</span
+                >
+                <span class="meta-item"
+                  >📅 {new Date(key.created_at).toLocaleDateString()}</span
+                >
+              </div>
             </div>
           </div>
 
-          <div class="key-details">
-            <div class="detail-row">
-              <span class="label">Type:</span>
-              <span class="badge">{key.key_type}</span>
-            </div>
-            <div class="detail-row">
-              <span class="label">Fingerprint:</span>
-              <code>{key.fingerprint.substring(0, 16)}...</code>
-            </div>
-            <div class="detail-row">
-              <span class="label">Created:</span>
-              <span>{new Date(key.created_at).toLocaleString()}</span>
-            </div>
-          </div>
-
-          <div class="key-actions-row">
+          <div style="display: flex; gap: 8px;">
             <button
-              class="action-btn"
-              on:click={() => handleExport(key.fingerprint, false)}
+              style="padding: 12px 20px; background: #000; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; z-index: 999;"
+              onclick="window.exportPublicKey('{key.fingerprint}'); return false;"
             >
-              📤 Export Public
+              📤 Public
             </button>
+
             {#if key.is_private}
               <button
-                class="action-btn orange"
-                on:click={() => handleExport(key.fingerprint, true)}
+                style="padding: 12px 20px; background: #000; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; z-index: 999;"
+                onclick="window.exportPrivateKey('{key.fingerprint}'); return false;"
               >
-                🔐 Export Private
+                🔐 Private
               </button>
             {/if}
+
             <button
-              class="action-btn red"
-              on:click={() => handleDelete(key.fingerprint)}
+              style="padding: 12px 20px; background: #fff; color: #000; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; z-index: 999;"
+              onclick="window.deleteThisKey('{key.fingerprint}'); return false;"
             >
               🗑️ Delete
             </button>
@@ -476,6 +494,137 @@
     margin-bottom: 16px;
   }
 
+  /* Modern White List Layout */
+  .keys-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .key-item {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    transition: all 0.2s;
+  }
+
+  .key-item:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border-color: #d1d5db;
+  }
+
+  .key-main {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .key-icon-wrapper {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    background: #f3f4f6;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .key-type-icon {
+    font-size: 24px;
+  }
+
+  .key-content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .key-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 4px 0;
+  }
+
+  .key-email {
+    font-size: 14px;
+    color: #6b7280;
+    margin: 0 0 8px 0;
+  }
+
+  .key-meta {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .meta-item {
+    font-size: 13px;
+    color: #9ca3af;
+  }
+
+  .key-buttons {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .key-btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+    font-family: inherit;
+    white-space: nowrap;
+  }
+
+  .key-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .key-btn:active {
+    transform: translateY(0);
+  }
+
+  .key-btn.primary {
+    background: #3b82f6;
+    color: white;
+  }
+
+  .key-btn.primary:hover {
+    background: #2563eb;
+  }
+
+  .key-btn.warning {
+    background: #f59e0b;
+    color: white;
+  }
+
+  .key-btn.warning:hover {
+    background: #d97706;
+  }
+
+  .key-btn.danger {
+    background: #ef4444;
+    color: white;
+  }
+
+  .key-btn.danger:hover {
+    background: #dc2626;
+  }
+
+  /* OLD STYLES - Keep for modal */
   .keys-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
