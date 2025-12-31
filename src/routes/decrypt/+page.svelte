@@ -3,6 +3,7 @@
   import { open, save } from "@tauri-apps/plugin-dialog";
   import { invoke } from "@tauri-apps/api/core";
   import { listKeys } from "$lib/api/keys";
+  import { Button, Input } from "$lib/components/ui";
 
   let file = "";
   let passphrase = "";
@@ -16,9 +17,12 @@
     loadingKeys = true;
     try {
       const res = await listKeys();
+      console.log("Decrypt page loaded keys:", res);
       if (res.success && res.data) {
         // Filter for private keys (ones we can use to decrypt)
+        console.log("All keys:", res.data);
         myKeys = res.data.filter((k: any) => k.is_private);
+        console.log("Private keys filtered:", myKeys);
         if (myKeys.length > 0) {
           selectedKeyFingerprint = myKeys[0].fingerprint;
         }
@@ -44,7 +48,18 @@
       });
 
       if (selected) {
-        file = typeof selected === "string" ? selected : selected.path;
+        // Handle string or array return types from open()
+        const path = Array.isArray(selected) ? selected[0] : selected;
+        // In some versions/configs it might be an object, but usually it's a path string
+        // We'll safely cast or check
+        if (typeof path === "string") {
+          file = path;
+        } else if (path && "path" in (path as any)) {
+          file = (path as any).path;
+        } else {
+          // Fallback or error
+          file = String(path);
+        }
       }
     } catch (e) {
       console.error(e);
@@ -94,10 +109,7 @@
         return;
       }
 
-      // Call backend
-      // Note: We are using the 'decrypt_file_cmd' which needs implementation update in Rust
       const res: any = await invoke("decrypt_file_cmd", {
-        // Updated to match backend command name if different
         inputPath: file,
         outputPath: savePath,
         passphrase: passphrase,
@@ -118,336 +130,212 @@
   }
 </script>
 
-<div class="container">
-  <div class="page-header">
-    <h1>🔓 Decrypt File</h1>
-    <p class="subtitle">Decrypt PGP encrypted files using your private keys</p>
+<div
+  style="max-width: 1000px; margin: 0 auto; padding: 24px; padding-bottom: 100px;"
+>
+  <div style="margin-bottom: 32px;">
+    <h1
+      style="font-size: 24px; font-weight: 600; color: #111; margin: 0 0 8px 0;"
+    >
+      🔓 Decrypt File
+    </h1>
+    <p style="color: #6b7280; margin: 0;">
+      Decrypt PGP encrypted files using your private keys
+    </p>
   </div>
 
-  <div class="workflow-grid">
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
     <!-- Step 1: File Selection -->
-    <div class="card">
-      <div class="card-header">
-        <div class="step-badge">1</div>
-        <h2>Encrypted File</h2>
+    <div
+      style="background: white; border-radius: 12px; border: 1px solid #e5e7eb; overflow: hidden; display: flex; flex-direction: column; height: 100%;"
+    >
+      <div
+        style="padding: 16px 20px; border-bottom: 1px solid #f3f4f6; display: flex; align-items: center; gap: 12px; background: #fafafa;"
+      >
+        <div
+          style="background: #e0e7ff; color: #4338ca; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px;"
+        >
+          1
+        </div>
+        <h2
+          style="margin: 0; font-size: 16px; font-weight: 600; color: #1f2937;"
+        >
+          Encrypted File
+        </h2>
       </div>
 
-      <div class="card-body" on:drop={handleDrop} on:dragover={handleDragOver}>
+      <div
+        style="flex: 1; padding: 24px; display: flex; flex-direction: column;"
+        on:drop={handleDrop}
+        on:dragover={handleDragOver}
+        role="region"
+        aria-label="File upload area"
+      >
         {#if !file}
-          <div class="upload-area" on:click={selectFile}>
-            <div class="upload-icon">🔐</div>
-            <h3>Drag & Drop Encrypted File</h3>
-            <p class="text-sm text-gray-400 mb-4">or click to browse</p>
-            <button class="btn-secondary">Choose File</button>
+          <div
+            style="flex: 1; padding: 40px; text-align: center; border: 2px dashed #e5e7eb; border-radius: 12px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: all 0.2s;"
+            on:click={selectFile}
+            role="button"
+            tabindex="0"
+            on:keydown={(e) => e.key === "Enter" && selectFile()}
+          >
+            <div style="font-size: 40px; margin-bottom: 16px; opacity: 0.5;">
+              🔐
+            </div>
+            <h3
+              style="margin: 0 0 8px 0; font-size: 16px; font-weight: 500; color: #111;"
+            >
+              Drag & Drop Encrypted File
+            </h3>
+            <p style="margin: 0 0 24px 0; font-size: 14px; color: #9ca3af;">
+              or click to browse
+            </p>
+            <Button
+              variant="secondary"
+              on:click={(e) => {
+                e.stopPropagation();
+                selectFile();
+              }}>Choose File</Button
+            >
           </div>
         {:else}
-          <div class="file-list">
-            <div class="file-item">
-              <span class="file-icon">🔒</span>
-              <span class="file-name" title={file}
-                >{file.split(/[\\/]/).pop()}</span
+          <div
+            style="padding: 12px 16px; background: #f3f4f6; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; gap: 12px;"
+          >
+            <div
+              style="display: flex; align-items: center; gap: 12px; overflow: hidden;"
+            >
+              <span style="font-size: 16px;">🔒</span>
+              <span
+                style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #374151; font-size: 14px;"
+                title={file}
               >
-              <button class="remove-btn" on:click={removeFile}>×</button>
+                {file.split(/[\\/]/).pop()}
+              </span>
             </div>
+            <button
+              style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 18px; padding: 4px;"
+              on:click={removeFile}>×</button
+            >
           </div>
         {/if}
       </div>
     </div>
 
     <!-- Step 2: Key & Passphrase -->
-    <div class="card">
-      <div class="card-header">
-        <div class="step-badge">2</div>
-        <h2>Unlock Key</h2>
+    <div
+      style="background: white; border-radius: 12px; border: 1px solid #e5e7eb; overflow: hidden; display: flex; flex-direction: column; height: 100%;"
+    >
+      <div
+        style="padding: 16px 20px; border-bottom: 1px solid #f3f4f6; display: flex; align-items: center; gap: 12px; background: #fafafa;"
+      >
+        <div
+          style="background: #e0e7ff; color: #4338ca; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px;"
+        >
+          2
+        </div>
+        <h2
+          style="margin: 0; font-size: 16px; font-weight: 600; color: #1f2937;"
+        >
+          Unlock Key
+        </h2>
       </div>
 
-      <div class="card-body p-4">
+      <div
+        style="flex: 1; padding: 24px; display: flex; flex-direction: column;"
+      >
         {#if loadingKeys}
-          <div class="loading">Loading keys...</div>
+          <div
+            style="flex: 1; display: flex; align-items: center; justify-content: center; color: #6b7280;"
+          >
+            Loading keys...
+          </div>
         {:else if myKeys.length === 0}
-          <div class="empty-keys">
-            <div class="empty-icon">🚫</div>
-            <h3>No Private Keys</h3>
-            <p>You need a private key to decrypt files.</p>
-            <a href="/keys" class="btn-primary small">Generate Key</a>
+          <div
+            style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: #6b7280; padding: 20px;"
+          >
+            <div style="font-size: 32px; margin-bottom: 16px; opacity: 0.5;">
+              🚫
+            </div>
+            <h3 style="margin: 0 0 8px 0; font-size: 16px; color: #374151;">
+              No Private Keys
+            </h3>
+            <p style="margin: 0 0 24px 0; font-size: 14px; max-width: 200px;">
+              You need a private key to decrypt files.
+            </p>
+            <a href="/keys" style="text-decoration: none;">
+              <Button variant="primary">Generate Key</Button>
+            </a>
           </div>
         {:else}
-          <div class="form-group">
-            <label>Select Key (for context)</label>
-            <div class="keys-list-mini">
+          <div style="margin-bottom: 24px;">
+            <label
+              style="display: block; font-weight: 500; margin-bottom: 8px; font-size: 14px; color: #374151;"
+              >Select Key (for context)</label
+            >
+            <div
+              style="max-height: 200px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 8px;"
+            >
               {#each myKeys as key}
+                <!-- svelte-ignore a11y-click-events-have-key-events -->
                 <div
-                  class="key-option"
-                  class:selected={selectedKeyFingerprint === key.fingerprint}
+                  style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; cursor: pointer; border-bottom: 1px solid #f3f4f6; transition: background 0.1s; {selectedKeyFingerprint ===
+                  key.fingerprint
+                    ? 'background: #eff6ff; border-left: 3px solid #3b82f6;'
+                    : 'border-left: 3px solid transparent;'}"
                   on:click={() => (selectedKeyFingerprint = key.fingerprint)}
+                  role="button"
+                  tabindex="0"
                 >
-                  <span class="icon">🔑</span>
-                  <div class="info">
-                    <span class="name">{key.user_id.name}</span>
-                    <span class="fp">{key.fingerprint.substring(0, 8)}...</span>
+                  <span style="font-size: 18px;">🔑</span>
+                  <div style="display: flex; flex-direction: column;">
+                    <span
+                      style="font-weight: 500; font-size: 14px; color: #1f2937;"
+                      >{key.user_id.name}</span
+                    >
+                    <span style="font-size: 12px; color: #6b7280;"
+                      >{key.fingerprint.substring(0, 8)}...</span
+                    >
                   </div>
                 </div>
               {/each}
             </div>
           </div>
 
-          <div class="form-group mt-4">
-            <label>Passphrase</label>
-            <input
-              type="password"
-              bind:value={passphrase}
-              placeholder="Enter passphrase for selected key"
-              class="w-full p-2 border rounded"
-            />
-            <p class="text-xs text-gray-500 mt-1">
-              Leave empty if key has no passphrase
-            </p>
-          </div>
+          <Input
+            label="Passphrase"
+            type="password"
+            bind:value={passphrase}
+            placeholder="Enter passphrase for selected key"
+          />
+          <p
+            style="font-size: 12px; color: #9ca3af; margin-top: -12px; margin-bottom: 0;"
+          >
+            Leave empty if key has no passphrase
+          </p>
         {/if}
       </div>
     </div>
   </div>
 
-  <div class="action-bar">
-    <div class="summary">
+  <div
+    style="position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 20px 32px; border-top: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.05); z-index: 100;"
+  >
+    <div style="font-size: 14px; color: #374151;">
       {#if result}
-        <span class="text-green-600 font-medium">{result}</span>
+        <span style="color: #059669; font-weight: 500;">{result}</span>
       {:else}
         Ready to decrypt
       {/if}
     </div>
-    <button
-      class="btn-primary large"
+    <Button
+      variant="primary"
       disabled={!file ||
         (myKeys.length > 0 && !selectedKeyFingerprint) ||
         processing}
       on:click={handleDecrypt}
     >
       {processing ? "Decrypting..." : "🔓 Decrypt File"}
-    </button>
+    </Button>
   </div>
 </div>
-
-<style>
-  .container {
-    max-width: 1000px;
-    margin: 0 auto;
-    padding: 24px;
-    padding-bottom: 100px;
-  }
-
-  .page-header h1 {
-    margin: 0 0 8px 0;
-    color: #1f2937;
-  }
-  .subtitle {
-    color: #6b7280;
-    margin: 0 0 32px 0;
-  }
-
-  .workflow-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 24px;
-  }
-  @media (max-width: 768px) {
-    .workflow-grid {
-      grid-template-columns: 1fr;
-    }
-  }
-
-  .card {
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .card-header {
-    padding: 16px 20px;
-    border-bottom: 1px solid #f3f4f6;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .step-badge {
-    background: #e0e7ff;
-    color: #4338ca;
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 600;
-  }
-
-  .card-body {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-  }
-  .p-4 {
-    padding: 20px;
-  }
-
-  /* Upload Area */
-  .upload-area {
-    padding: 40px;
-    text-align: center;
-    cursor: pointer;
-    background: #f9fafb;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-  }
-  .upload-icon {
-    font-size: 40px;
-    margin-bottom: 16px;
-  }
-
-  .file-list {
-    padding: 12px;
-  }
-  .file-item {
-    display: flex;
-    background: #f3f4f6;
-    padding: 10px;
-    border-radius: 6px;
-    align-items: center;
-    gap: 10px;
-  }
-  .file-name {
-    flex: 1;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-  }
-  .remove-btn {
-    border: none;
-    background: none;
-    color: red;
-    cursor: pointer;
-    font-size: 18px;
-  }
-
-  .btn-secondary {
-    background: white;
-    border: 1px solid #d1d5db;
-    padding: 8px 16px;
-    border-radius: 6px;
-    cursor: pointer;
-  }
-
-  /* Keys List */
-  .keys-list-mini {
-    max-height: 200px;
-    overflow-y: auto;
-    border: 1px solid #e5e7eb;
-    border-radius: 6px;
-    margin-top: 8px;
-  }
-  .key-option {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px 12px;
-    cursor: pointer;
-    border-bottom: 1px solid #f3f4f6;
-    transition: background 0.1s;
-  }
-  .key-option:last-child {
-    border-bottom: none;
-  }
-  .key-option:hover {
-    background: #f9fafb;
-  }
-  .key-option.selected {
-    background: #eff6ff;
-    border-left: 3px solid #3b82f6;
-  }
-
-  .info {
-    display: flex;
-    flex-direction: column;
-  }
-  .name {
-    font-weight: 500;
-    font-size: 14px;
-  }
-  .fp {
-    font-size: 11px;
-    color: #9ca3af;
-  }
-
-  .form-group label {
-    display: block;
-    font-weight: 500;
-    margin-bottom: 4px;
-    font-size: 14px;
-  }
-  input[type="password"] {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #d1d5db;
-    border-radius: 6px;
-    margin-top: 4px;
-  }
-
-  /* Action Bar */
-  .action-bar {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: white;
-    padding: 20px;
-    border-top: 1px solid #e5e7eb;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    z-index: 100;
-  }
-
-  .btn-primary.large {
-    background: #3b82f6;
-    color: white;
-    border: none;
-    padding: 12px 32px;
-    border-radius: 8px;
-    font-weight: 600;
-    font-size: 16px;
-    cursor: pointer;
-  }
-  .btn-primary:disabled {
-    background: #9ca3af;
-    cursor: not-allowed;
-  }
-
-  /* Empty State */
-  .empty-keys {
-    text-align: center;
-    padding: 20px;
-    color: #6b7280;
-  }
-  .empty-icon {
-    font-size: 32px;
-    margin-bottom: 8px;
-  }
-  .btn-primary.small {
-    display: inline-block;
-    background: #3b82f6;
-    color: white;
-    padding: 6px 12px;
-    border-radius: 6px;
-    text-decoration: none;
-    margin-top: 10px;
-    font-size: 13px;
-  }
-</style>

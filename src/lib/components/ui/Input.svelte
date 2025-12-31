@@ -15,15 +15,59 @@
       {#if required}<span class="required">*</span>{/if}
     </label>
   {/if}
-  <input
-    {id}
-    {type}
-    {placeholder}
-    {disabled}
-    bind:value
-    class="form-input"
-    class:disabled
-  />
+
+  {#if type === "password"}
+    <input
+      {id}
+      type="password"
+      {placeholder}
+      {disabled}
+      bind:value
+      class="form-input"
+      class:disabled
+    />
+  {:else if type === "email"}
+    <input
+      {id}
+      type="email"
+      {placeholder}
+      {disabled}
+      bind:value
+      class="form-input"
+      class:disabled
+    />
+  {:else if type === "date"}
+    <input
+      {id}
+      type="date"
+      {placeholder}
+      {disabled}
+      bind:value
+      class="form-input"
+      class:disabled
+    />
+  {:else if type === "time"}
+    <input
+      {id}
+      type="time"
+      {placeholder}
+      {disabled}
+      bind:value
+      class="form-input"
+      class:disabled
+    />
+  {:else}
+    <!-- Default to text -->
+    <input
+      {id}
+      type="text"
+      {placeholder}
+      {disabled}
+      bind:value
+      class="form-input"
+      class:disabled
+    />
+  {/if}
 </div>
 
 <style>
@@ -52,6 +96,7 @@
     color: #111827;
     font-family: inherit;
     transition: border-color 0.15s;
+    box-sizing: border-box; /* Ensure padding doesn't affect width */
   }
 
   .form-input:focus {

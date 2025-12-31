@@ -1,148 +1,100 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { Button } from "$lib/components/ui";
 
   let appVersion = "1.0.0 MVP";
 </script>
 
-<div class="container">
-  <div class="header">
-    <h1>🔒 ARMOR - Offline PGP</h1>
-    <p>Version {appVersion}</p>
+<div
+  style="max-width: 1200px; margin: 0 auto; padding: 48px 24px; text-align: center;"
+>
+  <div style="margin-bottom: 64px;">
+    <h1
+      style="font-size: 48px; font-weight: 800; color: #111; margin: 0 0 16px 0; letter-spacing: -1px;"
+    >
+      🔒 ARMOR
+    </h1>
+    <p
+      style="font-size: 18px; color: #6b7280; max-width: 600px; margin: 0 auto;"
+    >
+      Secure, offline PGP encryption for the modern web.
+      <br />
+      <span
+        style="font-size: 14px; color: #9ca3af; margin-top: 8px; display: inline-block;"
+        >v{appVersion}</span
+      >
+    </p>
   </div>
 
-  <div class="content">
-    <h2>Welcome to ARMOR MVP</h2>
-    <p>Offline PGP desktop application</p>
-
-    <div class="features">
-      <div class="feature-card">
-        <h3>🔑 Key Management</h3>
-        <p>Generate, import, and manage PGP keys</p>
-        <a href="/keys" class="btn">Manage Keys</a>
+  <div
+    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 32px; max-width: 1000px; margin: 0 auto;"
+  >
+    <!-- Key Management -->
+    <div
+      style="background: white; border: 1px solid #e5e7eb; border-radius: 16px; padding: 32px; text-align: left; transition: all 0.2s; display: flex; flex-direction: column;"
+    >
+      <div style="font-size: 40px; margin-bottom: 24px;">🔑</div>
+      <h3
+        style="font-size: 20px; font-weight: 600; color: #1f2937; margin: 0 0 8px 0;"
+      >
+        Key Management
+      </h3>
+      <p
+        style="color: #6b7280; font-size: 15px; margin: 0 0 24px 0; flex: 1; line-height: 1.5;"
+      >
+        Generate secure RSA/Ed25519 keys, import existing ones, and manage your
+        keychain.
+      </p>
+      <div>
+        <a href="/keys" style="text-decoration: none;">
+          <Button variant="primary" fullWidth>Manage Keys</Button>
+        </a>
       </div>
+    </div>
 
-      <div class="feature-card">
-        <h3>🔒 Encryption</h3>
-        <p>Encrypt files for recipients</p>
-        <a href="/encrypt" class="btn">Encrypt Files</a>
+    <!-- Encryption -->
+    <div
+      style="background: white; border: 1px solid #e5e7eb; border-radius: 16px; padding: 32px; text-align: left; transition: all 0.2s; display: flex; flex-direction: column;"
+    >
+      <div style="font-size: 40px; margin-bottom: 24px;">🔒</div>
+      <h3
+        style="font-size: 20px; font-weight: 600; color: #1f2937; margin: 0 0 8px 0;"
+      >
+        Encryption
+      </h3>
+      <p
+        style="color: #6b7280; font-size: 15px; margin: 0 0 24px 0; flex: 1; line-height: 1.5;"
+      >
+        Securely encrypt files for yourself or others using their public keys.
+        Only they can open it.
+      </p>
+      <div>
+        <a href="/encrypt" style="text-decoration: none;">
+          <Button variant="secondary" fullWidth>Encrypt Files</Button>
+        </a>
       </div>
+    </div>
 
-      <div class="feature-card">
-        <h3>🔓 Decryption</h3>
-        <p>Decrypt and verify files</p>
-        <a href="/decrypt" class="btn">Decrypt Files</a>
+    <!-- Decryption -->
+    <div
+      style="background: white; border: 1px solid #e5e7eb; border-radius: 16px; padding: 32px; text-align: left; transition: all 0.2s; display: flex; flex-direction: column;"
+    >
+      <div style="font-size: 40px; margin-bottom: 24px;">🔓</div>
+      <h3
+        style="font-size: 20px; font-weight: 600; color: #1f2937; margin: 0 0 8px 0;"
+      >
+        Decryption
+      </h3>
+      <p
+        style="color: #6b7280; font-size: 15px; margin: 0 0 24px 0; flex: 1; line-height: 1.5;"
+      >
+        Decrypt messages and files sent to you using your private key and
+        passphrase.
+      </p>
+      <div>
+        <a href="/decrypt" style="text-decoration: none;">
+          <Button variant="secondary" fullWidth>Decrypt Files</Button>
+        </a>
       </div>
     </div>
   </div>
 </div>
-
-<style>
-  .container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 24px;
-  }
-
-  .header {
-    text-align: center;
-    margin-bottom: 32px;
-  }
-
-  .header h1 {
-    font-size: 32px;
-    color: #1f2937;
-    margin-bottom: 8px;
-  }
-
-  .header p {
-    color: #6b7280;
-  }
-
-  .nav {
-    display: flex;
-    gap: 16px;
-    margin-bottom: 32px;
-    padding: 16px;
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  }
-
-  .nav-link {
-    padding: 8px 16px;
-    text-decoration: none;
-    color: #4b5563;
-    border-radius: 6px;
-    transition: all 0.2s;
-  }
-
-  .nav-link:hover {
-    background: #f3f4f6;
-    color: #1f2937;
-  }
-
-  .content {
-    background: white;
-    padding: 32px;
-    border-radius: 8px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  }
-
-  .content h2 {
-    color: #1f2937;
-    margin-bottom: 8px;
-  }
-
-  .content > p {
-    color: #6b7280;
-    margin-bottom: 32px;
-  }
-
-  .features {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 16px;
-  }
-
-  .feature-card {
-    padding: 24px;
-    border: 2px solid #e5e7eb;
-    border-radius: 8px;
-    transition: all 0.2s;
-  }
-
-  .feature-card:not(.disabled):hover {
-    border-color: #3b82f6;
-    box-shadow: 0 4px 6px rgba(59, 130, 246, 0.1);
-  }
-
-  .feature-card.disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-
-  .feature-card h3 {
-    font-size: 18px;
-    margin-bottom: 8px;
-    color: #1f2937;
-  }
-
-  .feature-card p {
-    color: #6b7280;
-    margin-bottom: 16px;
-  }
-
-  .btn {
-    display: inline-block;
-    padding: 8px 16px;
-    background: #3b82f6;
-    color: white;
-    text-decoration: none;
-    border-radius: 6px;
-    transition: all 0.2s;
-  }
-
-  .btn:hover {
-    background: #2563eb;
-  }
-</style>
