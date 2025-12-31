@@ -1,0 +1,18 @@
+{
+	"/": [
+		"src/routes/+layout.ts",
+		"src/routes/+layout.ts"
+	],
+	"/decrypt": [
+		"src/routes/+layout.ts"
+	],
+	"/encrypt": [
+		"src/routes/+layout.ts"
+	],
+	"/keys": [
+		"src/routes/+layout.ts"
+	],
+	"/settings": [
+		"src/routes/+layout.ts"
+	]
+}
