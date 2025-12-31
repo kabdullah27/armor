@@ -297,33 +297,58 @@
 </div>
 
 {#if showGenerateModal}
-  <div class="modal-overlay" on:click={() => (showGenerateModal = false)}>
-    <div class="modal" on:click|stopPropagation>
-      <div class="modal-header">
-        <h2>Generate New PGP Key</h2>
-        <button class="close-btn" on:click={() => (showGenerateModal = false)}
-          >×</button
+  <div
+    style="position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;"
+    on:click={() => (showGenerateModal = false)}
+  >
+    <div
+      style="background: white; border-radius: 12px; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);"
+      on:click|stopPropagation
+    >
+      <!-- Header -->
+      <div
+        style="padding: 24px; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center;"
+      >
+        <h2
+          style="font-size: 20px; font-weight: 600; color: #111827; margin: 0;"
+        >
+          Generate New PGP Key
+        </h2>
+        <button
+          style="width: 32px; height: 32px; border-radius: 6px; border: none; background: #f3f4f6; color: #6b7280; font-size: 24px; line-height: 1; cursor: pointer;"
+          on:click={() => (showGenerateModal = false)}>×</button
         >
       </div>
 
-      <div class="modal-body">
-        <div class="form-group">
-          <label for="name">Full Name *</label>
+      <!-- Body -->
+      <div style="padding: 24px;">
+        <!-- Name -->
+        <div style="margin-bottom: 20px;">
+          <label
+            style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;"
+            for="name">Full Name *</label
+          >
           <input
             id="name"
             type="text"
             bind:value={name}
             placeholder="John Doe"
+            style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; color: #111827;"
           />
         </div>
 
-        <div class="form-group">
-          <label for="email">Email Address *</label>
+        <!-- Email -->
+        <div style="margin-bottom: 20px;">
+          <label
+            style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;"
+            for="email">Email Address *</label
+          >
           <input
             id="email"
             type="email"
             bind:value={email}
             placeholder="john@example.com"
+            style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; color: #111827;"
           />
         </div>
 
