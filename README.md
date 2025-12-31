@@ -90,17 +90,53 @@ Before you begin, ensure you have the following installed:
 
 ## 📦 Building for Production
 
-To build the distributable application (installer/executable):
+To create a distributable application (installer/executable), run the build command.
+
+> **Note**: Tauri compiles native code. **To build for a specific OS, you generally need to compile ON that OS** (e.g., build on Windows to get an `.exe`, build on macOS to get a `.dmg`).
+
+### 🍎 macOS Build
+
+Run on a Mac:
 
 ```bash
-npm run tauri:build
+# Builds .dmg and .app
+bun run tauri build
 ```
 
-The output files will be located in:
+_Output_: `src-tauri/target/release/bundle/macos/`
 
-- `src-tauri/target/release/bundle/macos/` (macOS .app, .dmg)
-- `src-tauri/target/release/bundle/msi/` (Windows .msi)
-- `src-tauri/target/release/bundle/deb/` (Linux .deb)
+### 🪟 Windows Build
+
+Run on Windows (PowerShell/CMD):
+
+```bash
+# Builds .msi and .exe setup
+bun run tauri build
+```
+
+_Output_: `src-tauri/target/release/bundle/msi/` or `nsis/`
+
+### 🐧 Linux Build
+
+Run on Linux:
+
+```bash
+
+```
+
+bun run tauri build
+
+```
+
+_Output_: `src-tauri/target/release/bundle/deb/`
+
+### 🔄 Cross-Compilation (Automated)
+We have set up a **GitHub Actions** workflow (`.github/workflows/release.yml`) to automatically build and release the application for macOS, Windows, and Linux whenever a new tag (e.g., `v1.0.0`) is pushed to the repository. This is the recommended way to generate release artifacts for all platforms simultaneously.
+
+To trigger a build:
+1. Commit your changes.
+2. Tag the commit: `git tag v1.0.0`
+3. Push the tag: `git push origin v1.0.0`
 
 ## 🗃️ Project Structure
 
@@ -131,4 +167,7 @@ The output files will be located in:
 ## 📄 License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+
+```
+
 ```

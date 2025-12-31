@@ -29,8 +29,11 @@ pub fn load_config() -> Result<AppConfig> {
         return Ok(AppConfig::default());
     }
 
-    let content = fs::read_to_string(config_path)?;
-    let config: AppConfig = serde_json::from_str(&content).unwrap_or(AppConfig::default());
+    let content = fs::read_to_string(&config_path)?;
+    let config: AppConfig = serde_json::from_str(&content).map_err(|e| {
+        log::error!("Failed to parse config file at {:?}: {}", config_path, e);
+        anyhow::anyhow!("Failed to parse config file: {}", e)
+    })?;
     Ok(config)
 }
 

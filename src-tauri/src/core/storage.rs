@@ -11,7 +11,11 @@ pub struct Vault {
 
 impl Vault {
     pub fn new() -> Result<Self> {
-        let config = super::config::load_config()?;
+        let config = super::config::load_config().map_err(|e| {
+            log::error!("Vault failed to load config: {}", e);
+            e
+        })?;
+        log::info!("Vault loaded config: {:?}", config);
 
         let db_path = if let Some(path_str) = config.db_path {
             let path = PathBuf::from(path_str);

@@ -189,8 +189,12 @@
     </h1>
     <div style="display: flex; gap: 12px;">
       <Button variant="secondary" on:click={handleImport}>📥 Import Key</Button>
-      <Button variant="primary" on:click={() => (showGenerateModal = true)}
-        >+ Generate New Key</Button
+      <Button
+        variant="primary"
+        on:click={() => {
+          resetForm();
+          showGenerateModal = true;
+        }}>+ Generate New Key</Button
       >
     </div>
   </div>

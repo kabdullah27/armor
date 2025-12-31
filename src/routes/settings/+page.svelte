@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { join } from "@tauri-apps/api/path";
+
   import { open, save } from "@tauri-apps/plugin-dialog";
   import { getDbPath, setDbPath, backupDb, restoreDb } from "$lib/api/settings";
   import { settings } from "$lib/stores/settings";
@@ -40,8 +40,12 @@
         const folderPath = Array.isArray(selected) ? selected[0] : selected;
         if (!folderPath) return;
 
-        // Use Tauri's path join for cross-platform compatibility
-        const newDbPath = await join(folderPath, "armor.db");
+        // Simple string concatenation because tauri-plugin-path is not installed
+        // This is safe for macOS/Linux and usually works on Windows too (which handles forward slashes)
+        // Adjust if we strictly need OS-specific separator, but for now this fixes the "silent fail" on join()
+        const newDbPath = folderPath.endsWith("/")
+          ? folderPath + "armor.db"
+          : folderPath + "/armor.db";
 
         if (
           !confirm(
