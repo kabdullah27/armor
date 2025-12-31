@@ -134,7 +134,7 @@
 
     try {
       generating = true;
-      let expiryTimestamp = null;
+      let expiryTimestamp = undefined;
       if (!neverExpire && datePart && timePart) {
         const dateTimeString = `${datePart}T${timePart}`;
         expiryTimestamp = Math.floor(new Date(dateTimeString).getTime() / 1000);
@@ -244,7 +244,20 @@
               >
                 <span>🔑 {key.key_type}</span>
                 <span>🔖 {key.fingerprint.substring(0, 16)}...</span>
-                <span>📅 {new Date(key.created_at).toLocaleDateString()}</span>
+                <span
+                  >Created: {new Date(
+                    key.created_at
+                  ).toLocaleDateString()}</span
+                >
+                {#if key.expires_at}
+                  <span style="color: #ef4444;"
+                    >Expires: {new Date(
+                      key.expires_at
+                    ).toLocaleDateString()}</span
+                  >
+                {:else}
+                  <span style="color: #059669;">Never Expires</span>
+                {/if}
               </div>
             </div>
           </div>

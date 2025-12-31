@@ -1,7 +1,8 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { getDbPath, setDbPath, backupDb, restoreDb } from "$lib/api/settings";
+  import { join } from "@tauri-apps/api/path";
   import { open, save } from "@tauri-apps/plugin-dialog";
+  import { getDbPath, setDbPath, backupDb, restoreDb } from "$lib/api/settings";
   import { settings } from "$lib/stores/settings";
   import { Button } from "$lib/components/ui";
 
@@ -39,10 +40,8 @@
         const folderPath = Array.isArray(selected) ? selected[0] : selected;
         if (!folderPath) return;
 
-        const separator = navigator.userAgent.includes("Win") ? "\\" : "/";
-        const newDbPath = folderPath.endsWith(separator)
-          ? folderPath + "armor.db"
-          : folderPath + separator + "armor.db";
+        // Use Tauri's path join for cross-platform compatibility
+        const newDbPath = await join(folderPath, "armor.db");
 
         if (
           !confirm(
@@ -59,9 +58,8 @@
 
         if (res.success) {
           console.log("DB path updated successfully.");
-          // Optimistically update the UI since backend config might take a restart to reload
+          // Optimistically update the UI
           dbPath = newDbPath;
-
           alert("Database location updated! Please restart the application.");
         } else {
           console.error("Set DB Path failed:", res.error);
@@ -70,6 +68,7 @@
         processing = false;
       }
     } catch (e) {
+      console.error("Error selecting folder:", e);
       alert("Error selecting folder: " + e);
       processing = false;
     }
