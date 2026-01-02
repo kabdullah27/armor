@@ -7,11 +7,20 @@ use std::path::PathBuf;
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AppConfig {
     pub db_path: Option<String>,
+    #[serde(default = "default_first_run")]
+    pub first_run: bool,
+}
+
+fn default_first_run() -> bool {
+    true
 }
 
 impl AppConfig {
     pub fn default() -> Self {
-        Self { db_path: None }
+        Self {
+            db_path: None,
+            first_run: true,
+        }
     }
 }
 

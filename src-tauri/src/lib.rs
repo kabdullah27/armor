@@ -40,6 +40,8 @@ pub fn run() {
             commands::settings::set_db_path,
             commands::settings::backup_db,
             commands::settings::restore_db,
+            commands::settings::is_first_run,
+            commands::settings::complete_onboarding,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

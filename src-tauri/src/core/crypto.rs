@@ -88,13 +88,3 @@ pub fn generate_keypair(
 
     Ok((public_key, private_key))
 }
-
-pub fn encrypt_file_placeholder() -> Result<String> {
-    // TODO: Implement with Sequoia OpenPGP
-    Ok("Encrypted content placeholder".to_string())
-}
-
-pub fn decrypt_file_placeholder() -> Result<String> {
-    // TODO: Implement with Sequoia OpenPGP
-    Ok("Decrypted content placeholder".to_string())
-}

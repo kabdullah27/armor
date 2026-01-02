@@ -159,7 +159,7 @@ pub async fn decrypt_file_cmd(
     }
 
     impl<'a> DecryptionHelper for Helper<'a> {
-        fn decrypt<D>(&mut self, pkesks: &[openpgp::packet::PKESK], _skesks: &[openpgp::packet::SKESK], _sym_algo: Option<openpgp::types::SymmetricAlgorithm>, mut decrypt: D) -> openpgp::Result<Option<openpgp::Fingerprint>>
+        fn decrypt<D>(&mut self, pkesks: &[openpgp::packet::PKESK], _skesks: &[openpgp::packet::SKESK], sym_algo: Option<openpgp::types::SymmetricAlgorithm>, mut decrypt: D) -> openpgp::Result<Option<openpgp::Fingerprint>>
         where D: FnMut(openpgp::types::SymmetricAlgorithm, &openpgp::crypto::SessionKey) -> bool
         {
             let conn = self.conn.lock().unwrap();
@@ -181,25 +181,21 @@ pub async fn decrypt_file_cmd(
                              for key in cert.keys().secret() {
                                  if key.key().keyid() == *key_id {
                                      // Found a matching secret key!
-                                     let mut key_clone = key.clone();
-                                     let algo = pkesk.algorithm();
+                                     let key_clone = key.key().clone();
+
 
                                      // Unlock key
                                      // Use plain unencrypted or password
                                      let decrypted_key = if self.passphrase.is_empty() {
-                                         // For unencrypted keys, we can just use them.
-                                         // into_keypair() might expect UnencryptedSecret if strictly typed, 
-                                         // but typically secret() gives us a cleartext key if it wasn't encrypted?
-                                         // No, secret() gives SecretKey which might be encrypted.
-                                         // If it has no password, it might be Unencrypted.
-                                         // Simple attempt: 
-                                         key_clone.into_keypair(None).ok()
+                                         key_clone.into_keypair().ok()
                                      } else {
-                                        key_clone.decrypt_secret(&self.passphrase.clone().into()).ok()
+                                        key_clone.decrypt_secret(&self.passphrase.clone().into())
+                                            .ok()
+                                            .and_then(|k| k.into_keypair().ok())
                                      };
 
                                      if let Some(mut decrypted_key) = decrypted_key {
-                                          if pkesk.decrypt(&mut decrypted_key, algo).map(|(algo, session_key)| decrypt(algo, &session_key)).unwrap_or(false) {
+                                          if pkesk.decrypt(&mut decrypted_key, sym_algo).map(|(algo, session_key)| decrypt(algo, &session_key)).unwrap_or(false) {
                                               return Ok(Some(cert.fingerprint()));
                                           }
                                      }
@@ -231,7 +227,7 @@ pub async fn decrypt_file_cmd(
     std::io::copy(&mut decryptor, &mut output_file).map_err(|e| e.to_string())?;
 
     Ok(OperationResult::ok(DecryptionResult {
-        output_file: output_path,
+        output_path: output_path,
         success: true,
         size: 0,
         decrypted_with: None,

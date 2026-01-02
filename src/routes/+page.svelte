@@ -1,7 +1,61 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import { Button } from "$lib/components/ui";
+  import { isFirstRun, completeOnboarding, setDbPath } from "$lib/api/settings";
+  import { open, ask, message } from "@tauri-apps/plugin-dialog";
 
   let appVersion = "1.0.0 MVP";
+
+  onMount(async () => {
+    await checkFirstRun();
+  });
+
+  async function checkFirstRun() {
+    try {
+      const res = await isFirstRun();
+      if (res.success && res.data) {
+        // It is first run
+        const answer = await ask(
+          "Welcome to Armor! Would you like to set a custom location for your database storage? (Recommended for organized file management)",
+          {
+            title: "First Run Setup",
+            kind: "info",
+          }
+        );
+
+        if (answer) {
+          const selected = await open({
+            directory: true,
+            multiple: false,
+            title: "Select Database Folder",
+          });
+
+          if (selected) {
+            const folderPath = Array.isArray(selected) ? selected[0] : selected;
+            if (folderPath) {
+              // The backend now handles directory inputs intelligently by appending 'armor.db'
+              // so we can just pass the folder path directly.
+              const setRes = await setDbPath(folderPath);
+              if (setRes.success) {
+                await message("Database location set successfully!", {
+                  title: "Success",
+                  kind: "info",
+                });
+              } else {
+                await message(
+                  "Failed to set database location: " + setRes.error,
+                  { title: "Error", kind: "error" }
+                );
+              }
+            }
+          }
+        }
+        await completeOnboarding();
+      }
+    } catch (e) {
+      console.error("First run check failed:", e);
+    }
+  }
 </script>
 
 <div

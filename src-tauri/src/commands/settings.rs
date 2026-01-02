@@ -11,6 +11,20 @@ pub async fn get_db_path(vault: State<'_, Vault>) -> Result<OperationResult<Stri
 }
 
 #[tauri::command]
+pub async fn is_first_run() -> Result<OperationResult<bool>, String> {
+    let config = config::load_config().map_err(|e| e.to_string())?;
+    Ok(OperationResult::ok(config.first_run))
+}
+
+#[tauri::command]
+pub async fn complete_onboarding() -> Result<OperationResult<bool>, String> {
+    let mut config = config::load_config().map_err(|e| e.to_string())?;
+    config.first_run = false;
+    config::save_config(&config).map_err(|e| e.to_string())?;
+    Ok(OperationResult::ok(true))
+}
+
+#[tauri::command]
 pub async fn set_db_path(path: String) -> Result<OperationResult<bool>, String> {
     log::info!("SET_DB_PATH command called with path: {}", path);
     let mut config = match config::load_config() {
@@ -28,7 +42,13 @@ pub async fn set_db_path(path: String) -> Result<OperationResult<bool>, String> 
         proj_dirs.data_dir().join("armor.db")
     };
 
-    let new_path_buf = PathBuf::from(&path);
+    let mut new_path_buf = PathBuf::from(&path);
+    if new_path_buf.is_dir() {
+        new_path_buf = new_path_buf.join("armor.db");
+    }
+    
+    // Also update the string representation for the config
+    let path_str = new_path_buf.to_string_lossy().to_string();
     if let Some(parent) = new_path_buf.parent() {
         std::fs::create_dir_all(parent).map_err(|e| format!("Failed to create directory: {}", e))?;
     }
@@ -39,7 +59,7 @@ pub async fn set_db_path(path: String) -> Result<OperationResult<bool>, String> 
             .map_err(|e| format!("Failed to migrate database to new location: {}", e))?;
     }
 
-    config.db_path = Some(path);
+    config.db_path = Some(path_str);
 
     crate::core::config::save_config(&config).map_err(|e| e.to_string())?;
 

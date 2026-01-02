@@ -40,19 +40,6 @@ pub fn save_key_metadata(
     Ok(())
 }
 
-pub fn load_key_metadata(
-    vault: &crate::core::storage::Vault,
-    fingerprint: &str,
-) -> Result<KeyMetadata> {
-    let conn = vault.conn.lock().unwrap();
-    let mut stmt = conn.prepare("SELECT metadata_json FROM keys WHERE fingerprint = ?1")?;
-
-    let json: String = stmt.query_row(params![fingerprint], |row| row.get(0))?;
-
-    let metadata = serde_json::from_str(&json)?;
-    Ok(metadata)
-}
-
 pub fn list_all_keys(vault: &crate::core::storage::Vault) -> Result<Vec<KeyMetadata>> {
     let conn = vault.conn.lock().unwrap();
     let mut stmt = conn.prepare("SELECT metadata_json FROM keys")?;

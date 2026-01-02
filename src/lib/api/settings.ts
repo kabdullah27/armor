@@ -32,3 +32,19 @@ export async function restoreDb(sourcePath: string): Promise<OperationResult<boo
     return { success: false, error: String(e) };
   }
 }
+
+export async function isFirstRun(): Promise<OperationResult<boolean>> {
+  try {
+    return await invoke("is_first_run");
+  } catch (e) {
+    return { success: false, error: String(e) };
+  }
+}
+
+export async function completeOnboarding(): Promise<OperationResult<boolean>> {
+  try {
+    return await invoke("complete_onboarding");
+  } catch (e) {
+    return { success: false, error: String(e) };
+  }
+}

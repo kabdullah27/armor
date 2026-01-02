@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
 
-  import { open, save } from "@tauri-apps/plugin-dialog";
+  import { open, save, ask, message } from "@tauri-apps/plugin-dialog";
   import { getDbPath, setDbPath, backupDb, restoreDb } from "$lib/api/settings";
   import { settings } from "$lib/stores/settings";
   import { Button } from "$lib/components/ui";
@@ -37,43 +37,58 @@
       });
 
       if (selected) {
+        console.log("Dialog result:", selected);
         const folderPath = Array.isArray(selected) ? selected[0] : selected;
-        if (!folderPath) return;
+        console.log("Resolved folderPath:", folderPath);
 
-        // Simple string concatenation because tauri-plugin-path is not installed
-        // This is safe for macOS/Linux and usually works on Windows too (which handles forward slashes)
-        // Adjust if we strictly need OS-specific separator, but for now this fixes the "silent fail" on join()
-        const newDbPath = folderPath.endsWith("/")
-          ? folderPath + "armor.db"
-          : folderPath + "/armor.db";
+        if (!folderPath) {
+          console.warn("No folder path resolved. Aborting.");
+          return;
+        }
 
-        if (
-          !confirm(
-            `Switch database to: ${newDbPath}?\n\nApplication will need to restart.`
-          )
-        ) {
+        const confirmed = await ask(
+          `Switch database location to:\n${folderPath}?\n\nApplication will need to restart.`,
+          { title: "Confirm Database Switch", kind: "warning" }
+        );
+
+        if (!confirmed) {
+          console.log("User cancelled confirmation.");
           return;
         }
 
         processing = true;
-        console.log("Calling setDbPath with:", newDbPath);
-        const res = await setDbPath(newDbPath);
+
+        // Backend now handles appending 'armor.db' if a directory is passed
+        console.log("Calling setDbPath with:", folderPath);
+        const res = await setDbPath(folderPath);
         console.log("setDbPath result:", res);
 
         if (res.success) {
           console.log("DB path updated successfully.");
-          // Optimistically update the UI
-          dbPath = newDbPath;
-          alert("Database location updated! Please restart the application.");
+          // Optimistically update the UI (will be fully accurate after restart)
+          dbPath = folderPath;
+          await message(
+            "Database location updated! Please restart the application.",
+            { title: "Success", kind: "info" }
+          );
         } else {
           console.error("Set DB Path failed:", res.error);
-          alert("Failed to update location: " + res.error);
+          await message("Failed to update location: " + res.error, {
+            title: "Error",
+            kind: "error",
+          });
         }
         processing = false;
+      } else {
+        console.log("Dialog returned falsy (cancelled?)");
       }
     } catch (e) {
       console.error("Error selecting folder:", e);
-      alert("Error selecting folder: " + e);
+      console.error("Error selecting folder:", e);
+      await message("Error selecting folder: " + e, {
+        title: "Error",
+        kind: "error",
+      });
       processing = false;
     }
   }
@@ -97,20 +112,33 @@
       const res = await backupDb(savePath);
 
       if (res.success) {
-        alert("Database backed up successfully!");
+        await message("Database backed up successfully!", {
+          title: "Success",
+          kind: "info",
+        });
       } else {
-        alert("Backup failed: " + res.error);
+        await message("Backup failed: " + res.error, {
+          title: "Error",
+          kind: "error",
+        });
       }
     } catch (e) {
-      alert("Error: " + e);
+      await message("Error: " + e, { title: "Error", kind: "error" });
     } finally {
       processing = false;
     }
   }
 
   async function handleRestore() {
-    if (!confirm("Restoring will OVERWRITE your current database. Continue?"))
-      return;
+    const confirmed = await ask(
+      "Restoring will OVERWRITE your current database. Continue?",
+      {
+        title: "Confirm Restore",
+        kind: "warning",
+      }
+    );
+
+    if (!confirmed) return;
 
     try {
       const selected = await open({
@@ -132,12 +160,18 @@
       const res = await restoreDb(path);
 
       if (res.success) {
-        alert("Database restored! Please restart the application.");
+        await message("Database restored! Please restart the application.", {
+          title: "Success",
+          kind: "info",
+        });
       } else {
-        alert("Restore failed: " + res.error);
+        await message("Restore failed: " + res.error, {
+          title: "Error",
+          kind: "error",
+        });
       }
     } catch (e) {
-      alert("Error: " + e);
+      await message("Error: " + e, { title: "Error", kind: "error" });
     } finally {
       processing = false;
     }
