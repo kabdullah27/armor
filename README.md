@@ -88,54 +88,68 @@ Before you begin, ensure you have the following installed:
 
     The application window should open automatically.
 
-## 📦 Building for Production
+## 📦 Building & Deployment
 
-To create a distributable application (installer/executable), run the build command.
+### 🚀 Automated Build (Recommended for All Platforms)
 
-> **Note**: Tauri compiles native code. **To build for a specific OS, you generally need to compile ON that OS** (e.g., build on Windows to get an `.exe`, build on macOS to get a `.dmg`).
+The easiest way to build for **Windows, macOS, and Linux** simultaneously is to use the included GitHub Actions workflow.
 
-### 🍎 macOS Build
+1.  Push your code to GitHub.
+2.  Create and push a tag starting with `v` (e.g., `v1.0.0`).
+    ```bash
+    git tag v1.0.0
+    git push origin --tags
+    ```
+3.  Go to the **Actions** tab in your repo to watch the build.
+4.  Download artifacts (`.exe`, `.dmg`, `.deb`, `.AppImage`) from the **Releases** page.
 
-Run on a Mac:
+---
+
+### 🐳 Building with Docker (Linux Only)
+
+If you are on macOS or Windows and want to build the **Linux** version locally without installing system dependencies:
+
+1.  **Build the Image**:
+    ```bash
+    docker build -t armor-builder .
+    ```
+2.  **Run & Extract**:
+    ```bash
+    # Runs the build and puts artifacts in the 'output' folder in your current directory
+    docker run --rm -v "$(pwd)/output:/app/src-tauri/target/release/bundle" armor-builder
+    ```
+    _Note: On Apple Silicon, this produces an ARM64 Linux build. For x86_64, add `--platform linux/amd64` (slow)._
+
+---
+
+### 💻 Native Building (Manual)
+
+To build manually, you generally must be on the OS you are building for.
+
+#### 🍎 macOS
 
 ```bash
-# Builds .dmg and .app
 bun run tauri build
+# Output: src-tauri/target/release/bundle/macos/
 ```
 
-_Output_: `src-tauri/target/release/bundle/macos/`
+#### 🐧 Linux
 
-### 🪟 Windows Build
-
-Run on Windows (PowerShell/CMD):
+**Requirements:** `libwebkit2gtk-4.0-dev`, `build-essential`, `curl`, `wget`, `libssl-dev`, `libgtk-3-dev`, `libayatana-appindicator3-dev`, `librsvg2-dev`.
 
 ```bash
-# Builds .msi and .exe setup
 bun run tauri build
+# Output: src-tauri/target/release/bundle/deb/
 ```
 
-_Output_: `src-tauri/target/release/bundle/msi/` or `nsis/`
+#### 🪟 Windows
 
-### 🐧 Linux Build
+**Requirements:** [C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) and [WebView2](https://developer.microsoft.com/en-us/microsoft-edge/webview2/).
 
-Run on Linux:
-
-```bash
-
-```
-
+```powershell
 bun run tauri build
-
+# Output: src-tauri/target/release/bundle/nsis/
 ```
-
-_Output_: `src-tauri/target/release/bundle/deb/`
-
-### 🔄 Cross-Compilation Notes
-Tauri relies on native libraries and toolchains. **To build for a specific OS, you generally need to compile ON that OS** (e.g., build on Windows to get an `.exe`, build on macOS to get a `.dmg`).
-
-If you need to build for all platforms, you should either:
-1.  Build manually on each operating system.
-2.  Use a CI/CD pipeline (like GitHub Actions) to automate builds on different runners (optional, if you prefer automation).
 
 ## 🗃️ Project Structure
 
@@ -166,6 +180,8 @@ If you need to build for all platforms, you should either:
 ## 📄 License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+
+```
 
 ```
 
