@@ -114,7 +114,8 @@ pub async fn encrypt_file_cmd(
     // message does not need finalize
 
     Ok(OperationResult::ok(EncryptionResult {
-        output_file: output_path,
+        output_path: output_path, // Updated field name
+        success: true,            // Added field
         size: 0, 
         recipients: recipient_fingerprints,
         signed: false,
@@ -133,19 +134,23 @@ pub async fn decrypt_file_cmd(
     use openpgp::parse::stream::{DecryptorBuilder, DecryptionHelper, VerificationHelper, MessageStructure};
     use openpgp::policy::StandardPolicy;
     use openpgp::{KeyHandle, Cert};
-    use openpgp::parse::Parse;
+    use openpgp::parse::Parse; // Import Parse for from_bytes/from_reader
 
     let p = StandardPolicy::new();
 
-    // Helper struct - we need to keep vault reference
-    struct Helper {
-        vault: std::sync::Arc<std::sync::Mutex<rusqlite::Connection>>,
+    // Helper struct
+    // Use reference to Mutex since we are in async context but block for helper?
+    // Helper needs to be Send/Sync if strictly async, but here we run blocking code inside tauri command?
+    // Actually tauri commands are async. 
+    // Let's use a reference to the Vault's connection lock? No, that locks for duration.
+    // Better: Helper holds reference to the Mutex.
+    struct Helper<'a> {
+        conn: &'a std::sync::Mutex<rusqlite::Connection>,
         passphrase: String,
     }
 
-    impl VerificationHelper for Helper {
+    impl<'a> VerificationHelper for Helper<'a> {
         fn get_certs(&mut self, _ids: &[KeyHandle]) -> openpgp::Result<Vec<Cert>> {
-            // Implementation optional for strictly decryption, but good for signature verification
             Ok(Vec::new()) 
         }
         fn check(&mut self, _structure: MessageStructure) -> openpgp::Result<()> {
@@ -153,21 +158,15 @@ pub async fn decrypt_file_cmd(
         }
     }
 
-    impl DecryptionHelper for Helper {
+    impl<'a> DecryptionHelper for Helper<'a> {
         fn decrypt<D>(&mut self, pkesks: &[openpgp::packet::PKESK], _skesks: &[openpgp::packet::SKESK], _sym_algo: Option<openpgp::types::SymmetricAlgorithm>, mut decrypt: D) -> openpgp::Result<Option<openpgp::Fingerprint>>
         where D: FnMut(openpgp::types::SymmetricAlgorithm, &openpgp::crypto::SessionKey) -> bool
         {
-            let conn = self.vault.lock().unwrap();
+            let conn = self.conn.lock().unwrap();
 
             for pkesk in pkesks {
                 let key_id = pkesk.recipient();
                 
-                // Try to find key in DB by Key ID (or Subkey ID)
-                // Stored fingerprints are hex strings. KeyID is last 16 chars (64 bit) or 8 chars (32 bit).
-                // Let's iterate all private keys? Or better, query.
-                // SQLite doesn't have easy "endswith" for blob/text unless we use LIKE.
-                // KeyID (hex) is 8 bytes = 16 hex chars.
-                // Let's load all private keys. optimize later.
                 let mut stmt = conn.prepare("SELECT key_content FROM keys WHERE is_private = 1").map_err(|e| anyhow::anyhow!(e))?;
                 
                 let keys_iter = stmt.query_map([], |row| {
@@ -176,26 +175,31 @@ pub async fn decrypt_file_cmd(
 
                 for key_res in keys_iter {
                     if let Ok(key_str) = key_res {
+                         // Use Parse::from_bytes equivalent or Cert::from_bytes directly (if imported)
+                         // Cert::from_bytes is not inherent, it comes from Parse trait.
                          if let Ok(cert) = Cert::from_bytes(key_str.as_bytes()) {
-                             // Check if this cert has the key we need
                              for key in cert.keys().secret() {
                                  if key.key().keyid() == *key_id {
                                      // Found a matching secret key!
-                                     // Try to decrypt it
-                                     let key_clone = key.clone();
+                                     let mut key_clone = key.clone();
+                                     let algo = pkesk.algorithm();
 
                                      // Unlock key
+                                     // Use plain unencrypted or password
                                      let decrypted_key = if self.passphrase.is_empty() {
-                                         // Provide empty password if logic requires, but unencrypted keys usually work directly or need empty password
-                                         key_clone.key().clone().into_keypair().ok()
+                                         // For unencrypted keys, we can just use them.
+                                         // into_keypair() might expect UnencryptedSecret if strictly typed, 
+                                         // but typically secret() gives us a cleartext key if it wasn't encrypted?
+                                         // No, secret() gives SecretKey which might be encrypted.
+                                         // If it has no password, it might be Unencrypted.
+                                         // Simple attempt: 
+                                         key_clone.into_keypair(None).ok()
                                      } else {
-                                        key_clone.key().clone().decrypt_secret(&self.passphrase.clone().into())
-                                            .ok()
-                                            .and_then(|k| k.into_keypair().ok())
+                                        key_clone.decrypt_secret(&self.passphrase.clone().into()).ok()
                                      };
 
                                      if let Some(mut decrypted_key) = decrypted_key {
-                                          if pkesk.decrypt(&mut decrypted_key, None).map(|(algo, session_key)| decrypt(algo, &session_key)).unwrap_or(false) {
+                                          if pkesk.decrypt(&mut decrypted_key, algo).map(|(algo, session_key)| decrypt(algo, &session_key)).unwrap_or(false) {
                                               return Ok(Some(cert.fingerprint()));
                                           }
                                      }
@@ -209,33 +213,28 @@ pub async fn decrypt_file_cmd(
         }
     }
 
-    // Create helper with Arc-wrapped connection
-    let vault_conn = std::sync::Arc::new(std::sync::Mutex::new(
-        rusqlite::Connection::open(vault.db_path.clone()).map_err(|e| e.to_string())?
-    ));
-    
     let helper = Helper {
-        vault: vault_conn,
+        conn: &vault.conn,
         passphrase,
     };
 
-    let input_file = File::open(&input_path).map_err(|e| e.to_string())?;
+    let mut input_file = File::open(&input_path).map_err(|e| e.to_string())?;
     
     // Create decryptor
-    let mut decryptor = DecryptorBuilder::from_reader(input_file).map_err(|e| e.to_string())?
+    // Use from_reader (needs Parse trait in scope)
+    let mut decryptor = DecryptorBuilder::from_reader(&mut input_file).map_err(|e| e.to_string())?
         .with_policy(&p, None, helper)
         .map_err(|e| e.to_string())?;
 
-    // Prepare output
     let mut output_file = File::create(&output_path).map_err(|e| e.to_string())?;
     
-    // Read entire decrypted stream
     std::io::copy(&mut decryptor, &mut output_file).map_err(|e| e.to_string())?;
 
     Ok(OperationResult::ok(DecryptionResult {
         output_file: output_path,
+        success: true,
         size: 0,
-        decrypted_with: String::from("private_key"),
+        decrypted_with: None,
         signatures: Vec::new(),
     }))
 }

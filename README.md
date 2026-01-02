@@ -130,13 +130,12 @@ bun run tauri build
 
 _Output_: `src-tauri/target/release/bundle/deb/`
 
-### 🔄 Cross-Compilation (Automated)
-We have set up a **GitHub Actions** workflow (`.github/workflows/release.yml`) to automatically build and release the application for macOS, Windows, and Linux whenever a new tag (e.g., `v1.0.0`) is pushed to the repository. This is the recommended way to generate release artifacts for all platforms simultaneously.
+### 🔄 Cross-Compilation Notes
+Tauri relies on native libraries and toolchains. **To build for a specific OS, you generally need to compile ON that OS** (e.g., build on Windows to get an `.exe`, build on macOS to get a `.dmg`).
 
-To trigger a build:
-1. Commit your changes.
-2. Tag the commit: `git tag v1.0.0`
-3. Push the tag: `git push origin v1.0.0`
+If you need to build for all platforms, you should either:
+1.  Build manually on each operating system.
+2.  Use a CI/CD pipeline (like GitHub Actions) to automate builds on different runners (optional, if you prefer automation).
 
 ## 🗃️ Project Structure
 

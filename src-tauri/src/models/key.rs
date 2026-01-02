@@ -41,7 +41,8 @@ pub struct UserId {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EncryptionResult {
-    pub output_file: String,
+    pub output_path: String, // Renamed from output_file to match usage
+    pub success: bool,       // Added
     pub size: u64,
     pub recipients: Vec<String>,
     pub signed: bool,
@@ -49,9 +50,10 @@ pub struct EncryptionResult {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DecryptionResult {
-    pub output_file: String,
+    pub output_path: String, // Renamed from output_file
+    pub success: bool,       // Added
     pub size: u64,
-    pub decrypted_with: String,
+    pub decrypted_with: Option<String>, // Made optional
     pub signatures: Vec<SignatureInfo>,
 }
 
