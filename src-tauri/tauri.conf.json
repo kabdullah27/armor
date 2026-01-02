@@ -6,8 +6,8 @@
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:5173",
-    "beforeDevCommand": "/Users/swiftrans/.bun/bin/bun run dev",
-    "beforeBuildCommand": "/Users/swiftrans/.bun/bin/bun run build"
+    "beforeDevCommand": "bun run dev",
+    "beforeBuildCommand": "bun run build"
   },
   "app": {
     "windows": [
