@@ -42,9 +42,9 @@ tauri-plugin-fs = "2"
 rusqlite = { version = "0.30", features = ["bundled"] }
 
 [profile.release]
-codegen-units = 1
-lto = true
+# codegen-units = 1 # Commented out to allow parallel code generation (faster builds)
+lto = "thin"      # Changed from true (fat) to "thin" for much faster linking
 panic = "abort"
 strip = true
-opt-level = "z" # Optimize for size (which helps RAM/cache usage)
+opt-level = 3     # Changed to 3 (speed) or "s" (size) - "z" is very aggressive on build time
 
