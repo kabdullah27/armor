@@ -30,7 +30,8 @@ tokio = { version = "1.35", features = ["full"] }
 # Use Pure Rust Crypto (crypto-rust) for ALL platforms.
 # This solves the "missing pkg-config/nettle" on Windows and "trait bound" errors in crypto-cng.
 # It also makes cross-compilation easier and strictly uses Rust dependencies.
-sequoia-openpgp = { version = "1.22", default-features = false, features = ["compression", "crypto-rust", "allow-experimental-crypto"] }
+# Added 'allow-variable-time-crypto' to fix macOS build failure (Sequoia requirement for RustCrypto backend)
+sequoia-openpgp = { version = "1.22", default-features = false, features = ["compression", "crypto-rust", "allow-experimental-crypto", "allow-variable-time-crypto"] }
 anyhow = "1.0"
 thiserror = "1.0"
 
@@ -45,7 +46,7 @@ tauri-plugin-fs = "2"
 rusqlite = { version = "0.30", features = ["bundled"] }
 
 [profile.release]
-# codegen-units = 1 # Commented out to allow parallel code generation (faster builds)
+codegen-units = 256 # Maximize parallelism for faster Compile times (sacrifices a tiny bit of runtime speed)
 lto = "thin"      # Changed from true (fat) to "thin" for much faster linking
 panic = "abort"
 strip = true
