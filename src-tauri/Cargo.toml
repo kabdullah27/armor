@@ -27,6 +27,12 @@ serde_json = "1.0"
 tokio = { version = "1.35", features = ["full"] }
 
 # Cryptography
+# Use CNG (Windows native crypto) on Windows to avoid compiling Nettle (which fails in CI without pkg-config)
+[target.'cfg(target_os = "windows")'.dependencies]
+sequoia-openpgp = { version = "1.22", default-features = false, features = ["compression", "crypto-cng"] }
+
+# Use default Nettle backend for macOS/Linux
+[target.'cfg(not(target_os = "windows"))'.dependencies]
 sequoia-openpgp = "1.22"
 anyhow = "1.0"
 thiserror = "1.0"
