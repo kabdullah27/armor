@@ -4,6 +4,7 @@
   import { invoke } from "@tauri-apps/api/core";
   import type { KeyMetadata } from "$lib/types/key";
   import { Button } from "$lib/components/ui";
+  import { settings } from "$lib/stores/settings";
 
   // State
   let files: string[] = [];
@@ -328,7 +329,10 @@
   </div>
 
   <div
-    style="position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 20px 32px; border-top: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.05); z-index: 100;"
+    style="position: fixed; bottom: 0; left: {$settings.navbarPosition ===
+    'left'
+      ? '240px'
+      : '0'}; right: 0; background: white; padding: 20px 32px; border-top: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.05); z-index: 100;"
   >
     <div style="font-size: 14px; color: #374151;">
       Encrypting <strong>{files.length}</strong> file(s) for

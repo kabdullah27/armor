@@ -46,6 +46,7 @@
     background: white;
     border-bottom: 1px solid #e5e7eb;
     justify-content: space-between;
+    position: relative; /* Needed for absolute centering */
   }
 
   .logo {
@@ -55,11 +56,15 @@
     font-weight: 700;
     font-size: 18px;
     color: #1f2937;
+    z-index: 10; /* Ensure logo stays on top/clickable */
   }
 
   .nav {
     display: flex;
     gap: 24px;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
   }
 
   .nav-item {

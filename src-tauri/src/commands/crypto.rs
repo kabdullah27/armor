@@ -127,6 +127,7 @@ pub async fn decrypt_file_cmd(
     input_path: String,
     output_path: String,
     passphrase: String,
+    target_fingerprint: Option<String>,
     vault: State<'_, Vault>,
 ) -> Result<OperationResult<DecryptionResult>, String> {
     use std::fs::File;
@@ -138,15 +139,10 @@ pub async fn decrypt_file_cmd(
 
     let p = StandardPolicy::new();
 
-    // Helper struct
-    // Use reference to Mutex since we are in async context but block for helper?
-    // Helper needs to be Send/Sync if strictly async, but here we run blocking code inside tauri command?
-    // Actually tauri commands are async. 
-    // Let's use a reference to the Vault's connection lock? No, that locks for duration.
-    // Better: Helper holds reference to the Mutex.
     struct Helper<'a> {
         conn: &'a std::sync::Mutex<rusqlite::Connection>,
         passphrase: String,
+        target_fingerprint: Option<String>,
     }
 
     impl<'a> VerificationHelper for Helper<'a> {
@@ -163,48 +159,69 @@ pub async fn decrypt_file_cmd(
         where D: FnMut(openpgp::types::SymmetricAlgorithm, &openpgp::crypto::SessionKey) -> bool
         {
             let conn = self.conn.lock().unwrap();
+            let mut candidate_keys = Vec::new();
 
+            // 1. Fetch Candidate Keys
+            if let Some(target) = &self.target_fingerprint {
+                 let mut stmt = conn.prepare("SELECT key_content FROM keys WHERE fingerprint = ?1 AND is_private = 1").map_err(|e| anyhow::anyhow!(e))?;
+                 let rows = stmt.query_map([target], |row| row.get::<_, String>(0)).map_err(|e| anyhow::anyhow!(e))?;
+                 for r in rows { candidate_keys.push(r?); }
+                 
+                 // If specific key requested but not found in DB
+                 if candidate_keys.is_empty() {
+                     return Err(anyhow::anyhow!("Selected key not found in vault").into());
+                 }
+            } else {
+                 // Try all private keys (legacy behavior)
+                 let mut stmt = conn.prepare("SELECT key_content FROM keys WHERE is_private = 1").map_err(|e| anyhow::anyhow!(e))?;
+                 let rows = stmt.query_map([], |row| row.get::<_, String>(0)).map_err(|e| anyhow::anyhow!(e))?;
+                 for r in rows { candidate_keys.push(r?); }
+            }
+
+            // 2. Iterate PKESKs in the file
             for pkesk in pkesks {
                 let key_id = pkesk.recipient();
                 
-                let mut stmt = conn.prepare("SELECT key_content FROM keys WHERE is_private = 1").map_err(|e| anyhow::anyhow!(e))?;
-                
-                let keys_iter = stmt.query_map([], |row| {
-                    Ok(row.get::<_, String>(0)?)
-                }).map_err(|e| anyhow::anyhow!(e))?;
+                for key_str in &candidate_keys {
+                     if let Ok(cert) = Cert::from_bytes(key_str.as_bytes()) {
+                         for key in cert.keys().secret() {
+                             if key.key().keyid() == *key_id {
+                                 // Found a matching private key for this encrypted packet
+                                 let key_clone = key.key().clone();
+                                 let fp = cert.fingerprint();
 
-                for key_res in keys_iter {
-                    if let Ok(key_str) = key_res {
-                         // Use Parse::from_bytes equivalent or Cert::from_bytes directly (if imported)
-                         // Cert::from_bytes is not inherent, it comes from Parse trait.
-                         if let Ok(cert) = Cert::from_bytes(key_str.as_bytes()) {
-                             for key in cert.keys().secret() {
-                                 if key.key().keyid() == *key_id {
-                                     // Found a matching secret key!
-                                     let key_clone = key.key().clone();
+                                 // Unlock attempt
+                                 let decrypted_key_res = if self.passphrase.is_empty() {
+                                     key_clone.into_keypair()
+                                 } else {
+                                     key_clone.decrypt_secret(&self.passphrase.clone().into())
+                                        .and_then(|k| k.into_keypair())
+                                 };
 
-
-                                     // Unlock key
-                                     // Use plain unencrypted or password
-                                     let decrypted_key = if self.passphrase.is_empty() {
-                                         key_clone.into_keypair().ok()
-                                     } else {
-                                        key_clone.decrypt_secret(&self.passphrase.clone().into())
-                                            .ok()
-                                            .and_then(|k| k.into_keypair().ok())
-                                     };
-
-                                     if let Some(mut decrypted_key) = decrypted_key {
-                                          if pkesk.decrypt(&mut decrypted_key, sym_algo).map(|(algo, session_key)| decrypt(algo, &session_key)).unwrap_or(false) {
-                                              return Ok(Some(cert.fingerprint()));
-                                          }
+                                 match decrypted_key_res {
+                                     Ok(mut decrypted_key) => {
+                                         if pkesk.decrypt(&mut decrypted_key, sym_algo).map(|(algo, session_key)| decrypt(algo, &session_key)).unwrap_or(false) {
+                                              return Ok(Some(fp));
+                                         }
+                                     },
+                                     Err(_) => {
+                                         // Found the RIGHT key but WRONG password.
+                                         // Return explicit error to user.
+                                         // (Using generic error message to avoid oracle if paranoia needed, but user wants clarity)
+                                         return Err(anyhow::anyhow!("Wrong passphrase for key {}", fp).into());
                                      }
                                  }
                              }
                          }
-                    }
+                     }
                 }
             }
+            
+            // 3. Fallback: If we had a target but didn't find its PKESK
+            if self.target_fingerprint.is_some() {
+                return Err(anyhow::anyhow!("File is not encrypted for the selected key").into());
+            }
+
             Ok(None)
         }
     }
@@ -212,12 +229,11 @@ pub async fn decrypt_file_cmd(
     let helper = Helper {
         conn: &vault.conn,
         passphrase,
+        target_fingerprint,
     };
 
     let mut input_file = File::open(&input_path).map_err(|e| e.to_string())?;
     
-    // Create decryptor
-    // Use from_reader (needs Parse trait in scope)
     let mut decryptor = DecryptorBuilder::from_reader(&mut input_file).map_err(|e| e.to_string())?
         .with_policy(&p, None, helper)
         .map_err(|e| e.to_string())?;

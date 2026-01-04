@@ -1,9 +1,10 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { open, save } from "@tauri-apps/plugin-dialog";
+  import { open, save, message } from "@tauri-apps/plugin-dialog";
   import { invoke } from "@tauri-apps/api/core";
   import { listKeys } from "$lib/api/keys";
   import { Button, Input } from "$lib/components/ui";
+  import { settings } from "$lib/stores/settings";
 
   let file = "";
   let passphrase = "";
@@ -63,7 +64,10 @@
       }
     } catch (e) {
       console.error(e);
-      alert("Error selecting file: " + e);
+      await message("Error selecting file: " + e, {
+        title: "Error",
+        kind: "error",
+      });
     }
   }
 
@@ -113,17 +117,24 @@
         inputPath: file,
         outputPath: savePath,
         passphrase: passphrase,
+        targetFingerprint: selectedKeyFingerprint, // Pass the selected key fingerprint
       });
 
       if (res.success) {
         result = `File decrypted successfully to: ${savePath}`;
-        alert("Decryption successful!");
+        await message("Decryption successful!", {
+          title: "Success",
+          kind: "info",
+        });
         file = "";
       } else {
-        alert("Decryption failed: " + res.error);
+        await message("Decryption failed: " + res.error, {
+          title: "Error",
+          kind: "error",
+        });
       }
     } catch (e) {
-      alert("Error: " + e);
+      await message("Error: " + e, { title: "Error", kind: "error" });
     } finally {
       processing = false;
     }
@@ -319,7 +330,10 @@
   </div>
 
   <div
-    style="position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 20px 32px; border-top: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.05); z-index: 100;"
+    style="position: fixed; bottom: 0; left: {$settings.navbarPosition ===
+    'left'
+      ? '240px'
+      : '0'}; right: 0; background: white; padding: 20px 32px; border-top: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.05); z-index: 100;"
   >
     <div style="font-size: 14px; color: #374151;">
       {#if result}
