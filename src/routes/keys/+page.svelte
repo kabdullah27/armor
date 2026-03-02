@@ -21,7 +21,7 @@
   let name = "";
   let email = "";
   let comment = "";
-  let keyType: "rsa4096" | "ed25519" = "rsa4096";
+  let keyType: "rsa4096" | "rsa2048" | "ed25519" = "rsa4096";
   let datePart = "";
   let timePart = "12:00";
   let neverExpire = true;
@@ -326,9 +326,9 @@
           style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;"
           >Key Type</label
         >
-        <div style="display: flex; gap: 12px;">
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
           <label
-            style="flex: 1; padding: 16px; border: 2px solid {keyType ===
+            style="flex: 1; min-width: 140px; padding: 16px; border: 2px solid {keyType ===
             'rsa4096'
               ? '#000'
               : '#e5e7eb'}; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 12px; transition: all 0.2s;"
@@ -347,7 +347,26 @@
             </div>
           </label>
           <label
-            style="flex: 1; padding: 16px; border: 2px solid {keyType ===
+            style="flex: 1; min-width: 140px; padding: 16px; border: 2px solid {keyType ===
+            'rsa2048'
+              ? '#000'
+              : '#e5e7eb'}; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 12px; transition: all 0.2s;"
+          >
+            <input
+              type="radio"
+              bind:group={keyType}
+              value="rsa2048"
+              style="width: 18px; height: 18px; cursor: pointer; accent-color: black;"
+            />
+            <div style="flex: 1;">
+              <div style="font-size: 14px; font-weight: 600; color: #111827;">
+                RSA 2048
+              </div>
+              <div style="font-size: 13px; color: #6b7280;">Compatible</div>
+            </div>
+          </label>
+          <label
+            style="flex: 1; min-width: 140px; padding: 16px; border: 2px solid {keyType ===
             'ed25519'
               ? '#000'
               : '#e5e7eb'}; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 12px; transition: all 0.2s;"

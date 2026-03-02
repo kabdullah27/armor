@@ -73,6 +73,8 @@ pub async fn generate_key(
                 fingerprint: fingerprint.clone(),
                 key_type: if key_type == "rsa4096" {
                     KeyType::Rsa4096
+                } else if key_type == "rsa2048" {
+                    KeyType::Rsa2048
                 } else {
                     KeyType::Ed25519
                 },
@@ -147,7 +149,16 @@ pub async fn import_key(
     // Determine key type
     let key_type = match cert.primary_key().pk_algo() {
         openpgp::types::PublicKeyAlgorithm::EdDSA => KeyType::Ed25519,
-        _ => KeyType::Rsa4096, // Default fallback/mapping
+        openpgp::types::PublicKeyAlgorithm::RSAEncryptSign => {
+            // Detect RSA key size from the public key bits
+            let bits = cert.primary_key().mpis().bits().unwrap_or(4096);
+            if bits <= 2048 {
+                KeyType::Rsa2048
+            } else {
+                KeyType::Rsa4096
+            }
+        }
+        _ => KeyType::Rsa4096, // Default fallback
     };
 
     // Use standard policy to check validity and get expiration
