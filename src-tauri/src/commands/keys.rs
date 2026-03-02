@@ -40,9 +40,7 @@ pub async fn generate_key(
     expiry_timestamp: Option<i64>, // Unix timestamp in seconds
     vault: State<'_, Vault>,
 ) -> Result<OperationResult<KeyMetadata>, String> {
-    println!("DEBUG: generate_key called with name={}, email={}", name, email);
-    // Note: key_type is currently ignored by our simple Sequoia implementation which defaults to sensible modern defaults
-    // but in a full implementation we would map it to CipherSuite/Curve options.
+    println!("DEBUG: generate_key called with name={}, email={}, key_type={}", name, email, key_type);
     
     // Calculate duration in seconds if expiry is set
     let valid_seconds = expiry_timestamp.map(|ts| {
@@ -54,7 +52,7 @@ pub async fn generate_key(
         }
     });
 
-    match crate::core::crypto::generate_keypair(&name, &email, &passphrase, valid_seconds) {
+    match crate::core::crypto::generate_keypair(&name, &email, &passphrase, valid_seconds, &key_type) {
         Ok((_public_key, private_key)) => {
             // ... (rest of function) ...
             

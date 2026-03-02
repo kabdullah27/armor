@@ -13,15 +13,24 @@ pub fn generate_keypair(
     email: &str,
     passphrase: &str,
     valid_seconds: Option<u64>,
+    key_type: &str,
 ) -> Result<(String, String)> {
-    println!("DEBUG: crypto::generate_keypair started");
+    println!("DEBUG: crypto::generate_keypair started with key_type={}", key_type);
     let _p = StandardPolicy::new();
 
     let userid = format!("{} <{}>", name, email);
 
-    // 1. Generate a CertBuilder with reasonable defaults
+    // Map key_type string to Sequoia CipherSuite
+    let cipher_suite = match key_type {
+        "rsa2048" => openpgp::cert::CipherSuite::RSA2k,
+        "rsa4096" => openpgp::cert::CipherSuite::RSA4k,
+        _ => openpgp::cert::CipherSuite::Cv25519, // Ed25519 / Curve25519 (default)
+    };
+
+    // 1. Generate a CertBuilder with the selected cipher suite
     let mut builder = CertBuilder::new()
         .add_userid(userid.as_str())
+        .set_cipher_suite(cipher_suite)
         .add_signing_subkey()
         .add_transport_encryption_subkey();
 
