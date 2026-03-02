@@ -17,14 +17,56 @@
   {/if}
 
   <div class="uk-form-controls">
-    <input
-      {id}
-      {type}
-      {placeholder}
-      {disabled}
-      bind:value
-      class="uk-input"
-      class:uk-disabled={disabled}
-    />
+    {#if type === "password"}
+      <input
+        {id}
+        type="password"
+        {placeholder}
+        {disabled}
+        bind:value
+        class="uk-input"
+        class:uk-disabled={disabled}
+      />
+    {:else if type === "email"}
+      <input
+        {id}
+        type="email"
+        {placeholder}
+        {disabled}
+        bind:value
+        class="uk-input"
+        class:uk-disabled={disabled}
+      />
+    {:else if type === "date"}
+      <input
+        {id}
+        type="date"
+        {placeholder}
+        {disabled}
+        bind:value
+        class="uk-input"
+        class:uk-disabled={disabled}
+      />
+    {:else if type === "time"}
+      <input
+        {id}
+        type="time"
+        {placeholder}
+        {disabled}
+        bind:value
+        class="uk-input"
+        class:uk-disabled={disabled}
+      />
+    {:else}
+      <input
+        {id}
+        type="text"
+        {placeholder}
+        {disabled}
+        bind:value
+        class="uk-input"
+        class:uk-disabled={disabled}
+      />
+    {/if}
   </div>
 </div>
