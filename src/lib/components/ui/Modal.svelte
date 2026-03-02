@@ -35,8 +35,8 @@
   >
     <!-- svelte-ignore a11y-click-events-have-key-events, a11y-no-static-element-interactions -->
     <div 
-      class="uk-modal-dialog uk-modal-body"
-      style="max-width: {maxWidth}; width: 100%; border-radius: 12px; max-height: 90vh; overflow-y: auto;"
+      class="uk-modal-dialog uk-modal-body bg-white shadow-xl"
+      style="max-width: {maxWidth}; width: 100%; border-radius: 12px; max-height: 90vh; overflow-y: auto; padding: 30px;"
     >
       {#if title}
         <div class="uk-modal-header">
