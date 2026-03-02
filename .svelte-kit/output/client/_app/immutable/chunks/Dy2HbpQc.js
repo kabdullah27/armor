@@ -1,0 +1,1 @@
+import{w as s}from"./BO-c5S7Y.js";const a={navbarPosition:"left",navbarColor:"#ffffff"};function i(){const{subscribe:e,set:n,update:o}=s(a);return{subscribe:e,set:n,update:o,togglePosition:()=>o(t=>({...t,navbarPosition:t.navbarPosition==="left"?"top":"left"})),setColor:t=>o(r=>({...r,navbarColor:t}))}}const l=i();export{l as s};

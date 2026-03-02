@@ -1,9 +1,15 @@
 import { defineConfig } from 'vite';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
 import { sveltekit } from '@sveltejs/kit/vite';
+import tailwindcss from '@tailwindcss/vite';
+import franken from 'franken-ui/plugin-vite';
 
 export default defineConfig({
-  plugins: [sveltekit()],
+  plugins: [
+    franken({ preflight: false }),
+    tailwindcss(),
+    sveltekit()
+  ],
   clearScreen: false,
   server: {
     port: 5173,

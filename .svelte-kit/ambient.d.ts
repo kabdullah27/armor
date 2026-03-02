@@ -26,7 +26,6 @@
  * ```
  */
 declare module '$env/static/private' {
-	export const ANTIGRAVITY_AGENT: string;
 	export const NVM_INC: string;
 	export const TERM_PROGRAM: string;
 	export const NODE: string;
@@ -49,39 +48,40 @@ declare module '$env/static/private' {
 	export const VSCODE_PROFILE_INITIALIZED: string;
 	export const __CF_USER_TEXT_ENCODING: string;
 	export const npm_execpath: string;
-	export const PAGER: string;
 	export const TAURI_ENV_PLATFORM: string;
 	export const PATH: string;
 	export const CARGO_HOME: string;
-	export const npm_package_json: string;
 	export const LaunchInstanceID: string;
 	export const _: string;
+	export const npm_package_json: string;
 	export const TAURI_ENV_FAMILY: string;
 	export const TAURI_ENV_PLATFORM_VERSION: string;
 	export const USER_ZDOTDIR: string;
 	export const __CFBundleIdentifier: string;
-	export const npm_command: string;
 	export const PWD: string;
+	export const npm_command: string;
 	export const npm_lifecycle_event: string;
-	export const npm_package_name: string;
 	export const CARGO: string;
 	export const LANG: string;
+	export const npm_package_name: string;
 	export const VSCODE_GIT_ASKPASS_EXTRA_ARGS: string;
 	export const XPC_FLAGS: string;
 	export const TAURI_ENV_ARCH: string;
 	export const RUSTUP_TOOLCHAIN: string;
-	export const npm_package_version: string;
 	export const XPC_SERVICE_NAME: string;
+	export const npm_package_version: string;
 	export const ANTIGRAVITY_CLI_ALIAS: string;
 	export const VSCODE_INJECTION: string;
 	export const HOME: string;
 	export const SHLVL: string;
 	export const VSCODE_GIT_ASKPASS_MAIN: string;
 	export const RUSTUP_HOME: string;
+	export const GK_GL_ADDR: string;
 	export const LOGNAME: string;
 	export const RUST_RECURSION_COUNT: string;
 	export const npm_lifecycle_script: string;
 	export const VSCODE_GIT_IPC_HANDLE: string;
+	export const GK_GL_PATH: string;
 	export const BUN_INSTALL: string;
 	export const NVM_BIN: string;
 	export const npm_config_user_agent: string;
@@ -89,8 +89,8 @@ declare module '$env/static/private' {
 	export const VSCODE_GIT_ASKPASS_NODE: string;
 	export const OSLogRateLimit: string;
 	export const SECURITYSESSIONID: string;
-	export const npm_node_execpath: string;
 	export const COLORTERM: string;
+	export const npm_node_execpath: string;
 	export const NODE_ENV: string;
 }
 
@@ -121,7 +121,6 @@ declare module '$env/static/public' {
  */
 declare module '$env/dynamic/private' {
 	export const env: {
-		ANTIGRAVITY_AGENT: string;
 		NVM_INC: string;
 		TERM_PROGRAM: string;
 		NODE: string;
@@ -144,39 +143,40 @@ declare module '$env/dynamic/private' {
 		VSCODE_PROFILE_INITIALIZED: string;
 		__CF_USER_TEXT_ENCODING: string;
 		npm_execpath: string;
-		PAGER: string;
 		TAURI_ENV_PLATFORM: string;
 		PATH: string;
 		CARGO_HOME: string;
-		npm_package_json: string;
 		LaunchInstanceID: string;
 		_: string;
+		npm_package_json: string;
 		TAURI_ENV_FAMILY: string;
 		TAURI_ENV_PLATFORM_VERSION: string;
 		USER_ZDOTDIR: string;
 		__CFBundleIdentifier: string;
-		npm_command: string;
 		PWD: string;
+		npm_command: string;
 		npm_lifecycle_event: string;
-		npm_package_name: string;
 		CARGO: string;
 		LANG: string;
+		npm_package_name: string;
 		VSCODE_GIT_ASKPASS_EXTRA_ARGS: string;
 		XPC_FLAGS: string;
 		TAURI_ENV_ARCH: string;
 		RUSTUP_TOOLCHAIN: string;
-		npm_package_version: string;
 		XPC_SERVICE_NAME: string;
+		npm_package_version: string;
 		ANTIGRAVITY_CLI_ALIAS: string;
 		VSCODE_INJECTION: string;
 		HOME: string;
 		SHLVL: string;
 		VSCODE_GIT_ASKPASS_MAIN: string;
 		RUSTUP_HOME: string;
+		GK_GL_ADDR: string;
 		LOGNAME: string;
 		RUST_RECURSION_COUNT: string;
 		npm_lifecycle_script: string;
 		VSCODE_GIT_IPC_HANDLE: string;
+		GK_GL_PATH: string;
 		BUN_INSTALL: string;
 		NVM_BIN: string;
 		npm_config_user_agent: string;
@@ -184,8 +184,8 @@ declare module '$env/dynamic/private' {
 		VSCODE_GIT_ASKPASS_NODE: string;
 		OSLogRateLimit: string;
 		SECURITYSESSIONID: string;
-		npm_node_execpath: string;
 		COLORTERM: string;
+		npm_node_execpath: string;
 		NODE_ENV: string;
 		[key: `PUBLIC_${string}`]: undefined;
 		[key: `${string}`]: string | undefined;

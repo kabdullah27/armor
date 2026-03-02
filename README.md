@@ -23,7 +23,7 @@ Armor is a secure, easy-to-use, offline-first PGP desktop application built with
 
 Before you begin, ensure you have the following installed:
 
-1.  **Node.js** (v18 or v20 recommended) & **npm** (or pnpm/bun/yarn)
+1.  **Bun** (recommended) - Install via [bun.sh](https://bun.sh) — OR — **Node.js** (v18+)
 2.  **Rust** (v1.75+) - Install via [rustup.rs](https://rustup.rs/)
 
 ### Platform-Specific Requirements
@@ -70,38 +70,39 @@ Before you begin, ensure you have the following installed:
 2.  **Install Frontend Dependencies**
 
     ```bash
-    npm install
-    # or
     bun install
     ```
+
+    > ⚠️ Gunakan **bun** (bukan npm) karena project ini menggunakan native binding yang hanya compatible dengan bun.
 
 3.  **Run Development Mode**
     This will start the frontend dev server and the Tauri backend simultaneously.
 
     ```bash
-    npm run tauri:dev
-    # or
-    bun run tauri:dev
-    # or
     cargo tauri dev
+    ```
+
+    Or alternatively via bun:
+    ```bash
+    bun run tauri:dev
     ```
 
     The application window should open automatically.
 
 ## 📦 Building & Deployment
 
-### 🚀 Automated Build (Recommended for All Platforms)
+### 🚀 Automated Build via GitHub Actions (Recommended)
 
-The easiest way to build for **Windows, macOS, and Linux** simultaneously is to use the included GitHub Actions workflow.
+This project includes a GitHub Actions CI/CD workflow. The easiest way to automatically build the application for **Windows, macOS, and Linux** is by creating a new release version (Tagging).
 
-1.  Push your code to GitHub.
-2.  Create and push a tag starting with `v` (e.g., `v1.0.0`).
+1.  Ensure all code changes are committed and pushed to GitHub.
+2.  Create and push a new tag starting with the letter `v` (e.g., `v1.0.13`). Pushing this tag will **automatically trigger GitHub Actions to build the application** (`.exe`, `.dmg`, `.deb`, `.AppImage`).
     ```bash
-    git tag v1.0.0
+    git tag v1.0.13
     git push origin --tags
     ```
-3.  Go to the **Actions** tab in your repo to watch the build.
-4.  Download artifacts (`.exe`, `.dmg`, `.deb`, `.AppImage`) from the **Releases** page.
+3.  Open the **Actions** tab in your GitHub repository to monitor the build process.
+4.  Once completed, all installer files (`.exe`, `.dmg`, `.deb`, etc.) will automatically appear and be available for download on the GitHub **Releases** page.
 
 ---
 

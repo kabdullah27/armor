@@ -3,12 +3,12 @@
   "version": "1.0.13",
   "type": "module",
   "scripts": {
-    "dev": "vite dev",
+    "dev": "bun vite dev",
     "build": "vite build",
     "preview": "vite preview",
-    "tauri": "tauri",
-    "tauri:dev": "tauri dev",
-    "tauri:build": "tauri build"
+    "tauri": "cargo tauri",
+    "tauri:dev": "cargo tauri dev",
+    "tauri:build": "cargo tauri build"
   },
   "dependencies": {
     "@sveltejs/adapter-static": "^3.0.0",
@@ -22,11 +22,10 @@
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "3.1.0",
-    "@tailwindcss/postcss": "^4.2.1",
+    "@tailwindcss/vite": "^4.0.0",
     "@tauri-apps/cli": "^2.9.6",
-    "autoprefixer": "^10.4.23",
+    "@types/node": "^25.3.3",
     "franken-ui": "^2.1.1",
-    "postcss": "^8.5.6",
-    "tailwindcss": "^4.1.18"
+    "tailwindcss": "^4.0.0"
   }
 }
