@@ -26,6 +26,7 @@
  * ```
  */
 declare module '$env/static/private' {
+	export const ANTIGRAVITY_AGENT: string;
 	export const NVM_INC: string;
 	export const TERM_PROGRAM: string;
 	export const NODE: string;
@@ -36,7 +37,6 @@ declare module '$env/static/private' {
 	export const TERM_PROGRAM_VERSION: string;
 	export const VSCODE_PYTHON_AUTOACTIVATE_GUARD: string;
 	export const MallocNanoZone: string;
-	export const ORIGINAL_XDG_CURRENT_DESKTOP: string;
 	export const TAURI_CLI_VERBOSITY: string;
 	export const ZDOTDIR: string;
 	export const TAURI_ENV_DEBUG: string;
@@ -49,6 +49,7 @@ declare module '$env/static/private' {
 	export const VSCODE_PROFILE_INITIALIZED: string;
 	export const __CF_USER_TEXT_ENCODING: string;
 	export const npm_execpath: string;
+	export const PAGER: string;
 	export const TAURI_ENV_PLATFORM: string;
 	export const PATH: string;
 	export const CARGO_HOME: string;
@@ -120,6 +121,7 @@ declare module '$env/static/public' {
  */
 declare module '$env/dynamic/private' {
 	export const env: {
+		ANTIGRAVITY_AGENT: string;
 		NVM_INC: string;
 		TERM_PROGRAM: string;
 		NODE: string;
@@ -130,7 +132,6 @@ declare module '$env/dynamic/private' {
 		TERM_PROGRAM_VERSION: string;
 		VSCODE_PYTHON_AUTOACTIVATE_GUARD: string;
 		MallocNanoZone: string;
-		ORIGINAL_XDG_CURRENT_DESKTOP: string;
 		TAURI_CLI_VERBOSITY: string;
 		ZDOTDIR: string;
 		TAURI_ENV_DEBUG: string;
@@ -143,6 +144,7 @@ declare module '$env/dynamic/private' {
 		VSCODE_PROFILE_INITIALIZED: string;
 		__CF_USER_TEXT_ENCODING: string;
 		npm_execpath: string;
+		PAGER: string;
 		TAURI_ENV_PLATFORM: string;
 		PATH: string;
 		CARGO_HOME: string;
