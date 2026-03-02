@@ -4,7 +4,7 @@
   import { isFirstRun, completeOnboarding, setDbPath } from "$lib/api/settings";
   import { open, ask, message } from "@tauri-apps/plugin-dialog";
 
-  let appVersion = "1.0.0 MVP";
+  let appVersion = "1.0.12";
 
   onMount(async () => {
     await checkFirstRun();
