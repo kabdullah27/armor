@@ -6,9 +6,7 @@
     "dev": "bun vite dev",
     "build": "vite build",
     "preview": "vite preview",
-    "tauri": "cargo tauri",
-    "tauri:dev": "cargo tauri dev",
-    "tauri:build": "cargo tauri build"
+    "tauri": "tauri"
   },
   "dependencies": {
     "@sveltejs/adapter-static": "^3.0.0",
