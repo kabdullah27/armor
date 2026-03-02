@@ -40,6 +40,6 @@ declare module "$app/types" {
 		};
 		Pathname(): "/" | "/decrypt" | "/decrypt/" | "/encrypt" | "/encrypt/" | "/keys" | "/keys/" | "/settings" | "/settings/";
 		ResolvedPathname(): `${"" | `/${string}`}${ReturnType<AppTypes['Pathname']>}`;
-		Asset(): "/icons/128x128.png" | "/icons/128x128@2x.png" | "/icons/32x32.png" | "/icons/Square107x107Logo.png" | "/icons/Square142x142Logo.png" | "/icons/Square150x150Logo.png" | "/icons/Square284x284Logo.png" | "/icons/Square30x30Logo.png" | "/icons/Square310x310Logo.png" | "/icons/Square44x44Logo.png" | "/icons/Square71x71Logo.png" | "/icons/Square89x89Logo.png" | "/icons/StoreLogo.png" | "/icons/icon.png" | string & {};
+		Asset(): "/css/core.min.css" | "/css/franken-ui.css" | "/icons/128x128.png" | "/icons/128x128@2x.png" | "/icons/32x32.png" | "/icons/Square107x107Logo.png" | "/icons/Square142x142Logo.png" | "/icons/Square150x150Logo.png" | "/icons/Square284x284Logo.png" | "/icons/Square30x30Logo.png" | "/icons/Square310x310Logo.png" | "/icons/Square44x44Logo.png" | "/icons/Square71x71Logo.png" | "/icons/Square89x89Logo.png" | "/icons/StoreLogo.png" | "/icons/icon.png" | string & {};
 	}
 }

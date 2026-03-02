@@ -1,6 +1,5 @@
 @import "tailwindcss";
-@import "./lib/css/core.min.css";
-@import "franken-ui/css/franken-ui.css";
+@source "../src";
 
 * {
   margin: 0;

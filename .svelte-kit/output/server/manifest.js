@@ -7,10 +7,10 @@ function __memo(fn) {
 return {
 	appDir: "_app",
 	appPath: "_app",
-	assets: new Set(["icons/128x128.png","icons/128x128@2x.png","icons/32x32.png","icons/Square107x107Logo.png","icons/Square142x142Logo.png","icons/Square150x150Logo.png","icons/Square284x284Logo.png","icons/Square30x30Logo.png","icons/Square310x310Logo.png","icons/Square44x44Logo.png","icons/Square71x71Logo.png","icons/Square89x89Logo.png","icons/StoreLogo.png","icons/icon.png"]),
-	mimeTypes: {".png":"image/png"},
+	assets: new Set(["css/core.min.css","css/franken-ui.css","icons/128x128.png","icons/128x128@2x.png","icons/32x32.png","icons/Square107x107Logo.png","icons/Square142x142Logo.png","icons/Square150x150Logo.png","icons/Square284x284Logo.png","icons/Square30x30Logo.png","icons/Square310x310Logo.png","icons/Square44x44Logo.png","icons/Square71x71Logo.png","icons/Square89x89Logo.png","icons/StoreLogo.png","icons/icon.png"]),
+	mimeTypes: {".css":"text/css",".png":"image/png"},
 	_: {
-		client: {start:"_app/immutable/entry/start.AURrniCQ.js",app:"_app/immutable/entry/app.C7tC3lxf.js",imports:["_app/immutable/entry/start.AURrniCQ.js","_app/immutable/chunks/AeAXc8yW.js","_app/immutable/chunks/DBDMbGDQ.js","_app/immutable/chunks/BO-c5S7Y.js","_app/immutable/entry/app.C7tC3lxf.js","_app/immutable/chunks/C1FmrZbK.js","_app/immutable/chunks/DBDMbGDQ.js","_app/immutable/chunks/Da2QqrXs.js"],stylesheets:[],fonts:[],uses_env_dynamic_public:false},
+		client: {start:"_app/immutable/entry/start.CUP1gag6.js",app:"_app/immutable/entry/app.BFjgyvEz.js",imports:["_app/immutable/entry/start.CUP1gag6.js","_app/immutable/chunks/DJtdpqmd.js","_app/immutable/chunks/DBDMbGDQ.js","_app/immutable/chunks/BO-c5S7Y.js","_app/immutable/entry/app.BFjgyvEz.js","_app/immutable/chunks/C1FmrZbK.js","_app/immutable/chunks/DBDMbGDQ.js","_app/immutable/chunks/Da2QqrXs.js"],stylesheets:[],fonts:[],uses_env_dynamic_public:false},
 		nodes: [
 			__memo(() => import('./nodes/0.js')),
 			__memo(() => import('./nodes/1.js'))

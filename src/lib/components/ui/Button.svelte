@@ -3,14 +3,16 @@
   export let disabled: boolean = false;
   export let type: "button" | "submit" = "button";
   export let fullWidth: boolean = false;
+  export let size: "xs" | "sm" | "md" | "lg" = "sm";
 </script>
 
 <button
   {type}
-  class="uk-button {variant === 'primary' ? 'uk-button-primary' : variant === 'danger' ? 'uk-button-danger' : variant === 'ghost' ? 'uk-button-ghost' : 'uk-button-default'} {fullWidth ? 'w-full' : ''}"
+  class="uk-btn uk-btn-{size} {variant === 'primary' ? 'uk-btn-primary' : variant === 'danger' ? 'uk-btn-destructive' : variant === 'ghost' ? 'uk-btn-ghost' : 'uk-btn-default'} {fullWidth ? 'w-full' : ''}"
   {disabled}
   on:click
 >
   <slot />
 </button>
+
 
