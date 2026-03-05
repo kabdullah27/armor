@@ -96,9 +96,9 @@ Before you begin, ensure you have the following installed:
 This project includes a GitHub Actions CI/CD workflow. The easiest way to automatically build the application for **Windows, macOS, and Linux** is by creating a new release version (Tagging).
 
 1.  Ensure all code changes are committed and pushed to GitHub.
-2.  Create and push a new tag starting with the letter `v` (e.g., `v1.0.13`). Pushing this tag will **automatically trigger GitHub Actions to build the application** (`.exe`, `.dmg`, `.deb`, `.AppImage`).
+2.  Create and push a new tag starting with the letter `v` (e.g., `v1.0.14`). Pushing this tag will **automatically trigger GitHub Actions to build the application** (`.exe`, `.dmg`, `.deb`, `.AppImage`).
     ```bash
-    git tag v1.0.13
+    git tag v1.0.14
     git push origin --tags
     ```
 3.  Open the **Actions** tab in your GitHub repository to monitor the build process.

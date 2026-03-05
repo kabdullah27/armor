@@ -1,6 +1,6 @@
 [package]
 name = "armor"
-version = "1.0.0"
+version = "1.0.14"
 description = "Offline PGP Desktop Application"
 authors = ["ARMOR Team"]
 license = "MIT"
