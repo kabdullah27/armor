@@ -22,16 +22,18 @@ export interface OperationResult<T> {
 }
 
 export interface EncryptionResult {
-  output_file: string;
+  output_path: string;
+  success: boolean;
   size: number;
   recipients: string[];
   signed: boolean;
 }
 
 export interface DecryptionResult {
-  output_file: string;
+  output_path: string;
+  success: boolean;
   size: number;
-  decrypted_with: string;
+  decrypted_with?: string;
   signatures: SignatureInfo[];
 }
 

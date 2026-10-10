@@ -1,8 +1,10 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { open, save, message } from "@tauri-apps/plugin-dialog";
-  import { invoke } from "@tauri-apps/api/core";
+  import type { KeyMetadata } from "$lib/types/key";
   import { listKeys } from "$lib/api/keys";
+  import { decryptFile } from "$lib/api/crypto";
+  import { onFileDrop } from "$lib/utils/fileDrop";
   import { Button, Input } from "$lib/components/ui";
   import { settings } from "$lib/stores/settings";
 
@@ -10,30 +12,28 @@
   let passphrase = "";
   let processing = false;
   let result = "";
-  let myKeys: any[] = [];
+
+  let myKeys: KeyMetadata[] = [];
   let selectedKeyFingerprint: string | null = null;
   let loadingKeys = false;
 
-  onMount(async () => {
-    loadingKeys = true;
-    try {
-      const res = await listKeys();
-      console.log("Decrypt page loaded keys:", res);
-      if (res.success && res.data) {
-        // Filter for private keys (ones we can use to decrypt)
-        console.log("All keys:", res.data);
-        myKeys = res.data.filter((k: any) => k.is_private);
-        console.log("Private keys filtered:", myKeys);
-        if (myKeys.length > 0) {
-          selectedKeyFingerprint = myKeys[0].fingerprint;
-        }
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      loadingKeys = false;
-    }
+  onMount(() => {
+    loadKeys();
+    return onFileDrop((paths) => (file = paths[0]));
   });
+
+  async function loadKeys() {
+    loadingKeys = true;
+    const res = await listKeys();
+    if (res.success && res.data) {
+      // Only private keys can decrypt
+      myKeys = res.data.filter((k) => k.is_private);
+      if (myKeys.length > 0) selectedKeyFingerprint = myKeys[0].fingerprint;
+    } else {
+      console.error("Failed to load keys:", res.error);
+    }
+    loadingKeys = false;
+  }
 
   async function selectFile() {
     try {
@@ -47,21 +47,7 @@
           },
         ],
       });
-
-      if (selected) {
-        // Handle string or array return types from open()
-        const path = Array.isArray(selected) ? selected[0] : selected;
-        // In some versions/configs it might be an object, but usually it's a path string
-        // We'll safely cast or check
-        if (typeof path === "string") {
-          file = path;
-        } else if (path && "path" in (path as any)) {
-          file = (path as any).path;
-        } else {
-          // Fallback or error
-          file = String(path);
-        }
-      }
+      if (typeof selected === "string") file = selected;
     } catch (e) {
       console.error(e);
       await message("Error selecting file: " + e, {
@@ -73,19 +59,6 @@
 
   function handleDragOver(e: DragEvent) {
     e.preventDefault();
-    e.stopPropagation();
-  }
-
-  function handleDrop(e: DragEvent) {
-    e.preventDefault();
-    e.stopPropagation();
-
-    if (e.dataTransfer?.files.length) {
-      // @ts-ignore
-      const f = e.dataTransfer.files[0];
-      // @ts-ignore
-      file = f.path || f.name;
-    }
   }
 
   function removeFile() {
@@ -94,30 +67,23 @@
 
   async function handleDecrypt() {
     if (!file) return;
-
     processing = true;
     result = "";
 
     try {
-      // Ask where to save the decrypted file
       const originalName = file.split(/[\\/]/).pop() || "decrypted";
       const cleanName = originalName.replace(/\.(gpg|pgp|asc|enc)$/i, "");
-
       const savePath = await save({
         title: "Save Decrypted File",
         defaultPath: cleanName,
       });
+      if (!savePath) return;
 
-      if (!savePath) {
-        processing = false;
-        return;
-      }
-
-      const res: any = await invoke("decrypt_file_cmd", {
+      const res = await decryptFile({
         inputPath: file,
         outputPath: savePath,
-        passphrase: passphrase,
-        targetFingerprint: selectedKeyFingerprint, // Pass the selected key fingerprint
+        passphrase,
+        targetFingerprint: selectedKeyFingerprint,
       });
 
       if (res.success) {
@@ -127,8 +93,9 @@
           kind: "info",
         });
         file = "";
+        passphrase = "";
       } else {
-        await message("Decryption failed: " + res.error, {
+        await message(res.error || "Decryption failed", {
           title: "Error",
           kind: "error",
         });
@@ -177,7 +144,6 @@
 
       <div
         style="flex: 1; padding: 24px; display: flex; flex-direction: column;"
-        on:drop={handleDrop}
         on:dragover={handleDragOver}
         role="region"
         aria-label="File upload area"

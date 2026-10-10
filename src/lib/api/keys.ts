@@ -32,9 +32,11 @@ export async function generateKey(params: {
   }
 }
 
-export async function importKey(keyText: string): Promise<OperationResult<KeyMetadata>> {
+/** Accepts ASCII-armored text or raw (binary) key bytes. */
+export async function importKey(key: string | Uint8Array): Promise<OperationResult<KeyMetadata>> {
   try {
-    return await invoke("import_key", { keyText });
+    const bytes = typeof key === "string" ? new TextEncoder().encode(key) : key;
+    return await invoke("import_key", { keyData: Array.from(bytes) });
   } catch (e) {
     return { success: false, error: String(e) };
   }

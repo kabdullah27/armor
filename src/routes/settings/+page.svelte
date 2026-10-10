@@ -66,7 +66,7 @@
         if (res.success) {
           console.log("DB path updated successfully.");
           // Optimistically update the UI (will be fully accurate after restart)
-          dbPath = folderPath;
+          dbPath = res.data ?? folderPath;
           await message(
             "Database location updated! Please restart the application.",
             { title: "Success", kind: "info" }
@@ -83,7 +83,6 @@
         console.log("Dialog returned falsy (cancelled?)");
       }
     } catch (e) {
-      console.error("Error selecting folder:", e);
       console.error("Error selecting folder:", e);
       await message("Error selecting folder: " + e, {
         title: "Error",
@@ -160,7 +159,7 @@
       const res = await restoreDb(path);
 
       if (res.success) {
-        await message("Database restored! Please restart the application.", {
+        await message("Database restored successfully!", {
           title: "Success",
           kind: "info",
         });
@@ -227,8 +226,9 @@
       style="background: #eff6ff; border: 1px solid #dbeafe; padding: 12px; border-radius: 8px; font-size: 13px; color: #1e40af; margin-bottom: 24px;"
     >
       <p style="margin: 0;">
-        <strong>Note:</strong> Changing the location will require a restart. The
-        new location will start with a fresh database if one doesn't exist.
+        <strong>Note:</strong> Changing the location requires a restart. If the
+        new folder has no database yet, your current keys are copied there. If
+        it already has one, Armor switches to that database.
       </p>
     </div>
 

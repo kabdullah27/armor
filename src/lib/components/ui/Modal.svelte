@@ -8,6 +8,7 @@
   const dispatch = createEventDispatcher();
 
   function close() {
+    show = false;
     dispatch("close");
   }
 
@@ -36,7 +37,7 @@
     <!-- svelte-ignore a11y-click-events-have-key-events, a11y-no-static-element-interactions -->
     <div 
       class="uk-modal-dialog uk-modal-body bg-white shadow-xl"
-      style="max-width: {maxWidth}; width: 100%; border-radius: 12px; max-height: 90vh; overflow-y: auto; padding: 30px;"
+      style="position: relative; max-width: {maxWidth}; width: 100%; border-radius: 12px; max-height: 90vh; overflow-y: auto; padding: 30px;"
     >
       {#if title}
         <div class="uk-modal-header">
@@ -44,12 +45,11 @@
         </div>
       {/if}
       <button
-        class="uk-modal-close-default"
         type="button"
-        uk-close
         on:click={close}
         aria-label="Close"
-      ></button>
+        style="position: absolute; top: 14px; right: 14px; width: 32px; height: 32px; border: 0; border-radius: 8px; background: none; color: #6b7280; font-size: 22px; line-height: 1; cursor: pointer;"
+      >×</button>
 
       <div class="uk-modal-body">
         <slot />

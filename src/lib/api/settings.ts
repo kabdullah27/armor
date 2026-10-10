@@ -9,7 +9,8 @@ export async function getDbPath(): Promise<OperationResult<string>> {
   }
 }
 
-export async function setDbPath(path: string): Promise<OperationResult<boolean>> {
+/** Returns the resolved database file path. */
+export async function setDbPath(path: string): Promise<OperationResult<string>> {
   try {
     return await invoke("set_db_path", { path });
   } catch (e) {

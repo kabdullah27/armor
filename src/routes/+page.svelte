@@ -3,10 +3,13 @@
   import { Button } from "$lib/components/ui";
   import { isFirstRun, completeOnboarding, setDbPath } from "$lib/api/settings";
   import { open, ask, message } from "@tauri-apps/plugin-dialog";
+  import { getVersion } from "@tauri-apps/api/app";
 
-  let appVersion = "1.0.13";
+  // Read from the app bundle, which takes its version from package.json
+  let appVersion = "";
 
   onMount(async () => {
+    getVersion().then((v) => (appVersion = v));
     await checkFirstRun();
   });
 
@@ -74,7 +77,7 @@
       <br />
       <span
         style="font-size: 14px; color: #9ca3af; margin-top: 8px; display: inline-block;"
-        >v{appVersion}</span
+        >{appVersion ? `v${appVersion}` : ""}</span
       >
     </p>
   </div>
