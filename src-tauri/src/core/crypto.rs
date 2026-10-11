@@ -3,97 +3,66 @@
 use anyhow::Result;
 use openpgp::cert::prelude::*;
 use openpgp::crypto::Password;
-use openpgp::policy::StandardPolicy;
 use openpgp::serialize::stream::{Armorer, Message};
-use openpgp::serialize::Serialize; // Added Serialize trait
+use openpgp::serialize::Serialize;
 use sequoia_openpgp as openpgp;
 
+/// Generates a new certificate. Returns the cert and its ASCII-armored TSK
+/// (which also contains the public parts).
 pub fn generate_keypair(
     name: &str,
     email: &str,
     passphrase: &str,
     valid_seconds: Option<u64>,
     key_type: &str,
-) -> Result<(String, String)> {
-    println!("DEBUG: crypto::generate_keypair started with key_type={}", key_type);
-    let _p = StandardPolicy::new();
+) -> Result<(Cert, String)> {
+    log::info!("generate_keypair started with key_type={}", key_type);
 
     let userid = format!("{} <{}>", name, email);
 
-    // Map key_type string to Sequoia CipherSuite
     let cipher_suite = match key_type {
-        "rsa2048" => openpgp::cert::CipherSuite::RSA2k,
-        "rsa4096" => openpgp::cert::CipherSuite::RSA4k,
-        _ => openpgp::cert::CipherSuite::Cv25519, // Ed25519 / Curve25519 (default)
+        "rsa2048" => CipherSuite::RSA2k,
+        "rsa4096" => CipherSuite::RSA4k,
+        _ => CipherSuite::Cv25519, // Ed25519 / Curve25519 (default)
     };
 
-    // 1. Generate a CertBuilder with the selected cipher suite
+    // The builder encrypts every secret key with the password itself, so a
+    // failure aborts generation instead of silently storing an unprotected key.
+    let password = (!passphrase.is_empty()).then(|| Password::from(passphrase));
+
     let mut builder = CertBuilder::new()
         .add_userid(userid.as_str())
         .set_cipher_suite(cipher_suite)
         .add_signing_subkey()
-        .add_transport_encryption_subkey();
+        .add_transport_encryption_subkey()
+        .set_password(password);
 
     if let Some(seconds) = valid_seconds {
-        // use std::time::Duration;
         builder = builder.set_validity_period(std::time::Duration::from_secs(seconds));
     }
 
-    let (mut cert, _) = builder.generate()?;
+    let (cert, _) = builder.generate()?;
+    let private_key = armor_cert(&cert, true)?;
+    Ok((cert, private_key))
+}
 
-    // 2. Protect the secret keys with the passphrase
-    // Only encrypt if a passphrase is provided
-    if !passphrase.is_empty() {
-        let password = Password::from(passphrase);
-        let packets: Vec<openpgp::packet::Packet> = cert.into();
-
-        // We need to map over packets because encrypt_secret consumes the key
-        let packets: Vec<openpgp::packet::Packet> = packets
-            .into_iter()
-            .map(|packet| match packet {
-                openpgp::packet::Packet::SecretKey(key) => {
-                    match key.clone().encrypt_secret(&password) {
-                        Ok(encrypted_key) => openpgp::packet::Packet::SecretKey(encrypted_key),
-                        Err(_) => openpgp::packet::Packet::SecretKey(key),
-                    }
-                }
-                openpgp::packet::Packet::SecretSubkey(key) => {
-                    match key.clone().encrypt_secret(&password) {
-                        Ok(encrypted_key) => openpgp::packet::Packet::SecretSubkey(encrypted_key),
-                        Err(_) => openpgp::packet::Packet::SecretSubkey(key),
-                    }
-                }
-                p => p,
-            })
-            .collect();
-
-        // Reassemble the Cert
-        cert = Cert::try_from(packets)?;
-    }
-
-    // 3. Export Public Key (Ascii Armored)
-    let mut public_bytes = Vec::new();
+/// Serializes a cert as ASCII armor, either the full TSK or just the public parts.
+pub fn armor_cert(cert: &Cert, include_secret: bool) -> Result<String> {
+    let mut bytes = Vec::new();
     {
-        let message = Message::new(&mut public_bytes);
-        let mut armor_writer = Armorer::new(message)
-            .kind(openpgp::armor::Kind::PublicKey)
-            .build()?;
-        cert.serialize(&mut armor_writer)?;
-        armor_writer.finalize()?;
+        let message = Message::new(&mut bytes);
+        let kind = if include_secret {
+            openpgp::armor::Kind::SecretKey
+        } else {
+            openpgp::armor::Kind::PublicKey
+        };
+        let mut writer = Armorer::new(message).kind(kind).build()?;
+        if include_secret {
+            cert.as_tsk().serialize(&mut writer)?;
+        } else {
+            cert.serialize(&mut writer)?;
+        }
+        writer.finalize()?;
     }
-    let public_key = String::from_utf8(public_bytes)?;
-
-    // 4. Export Private Key (Ascii Armored)
-    let mut private_bytes = Vec::new();
-    {
-        let message = Message::new(&mut private_bytes);
-        let mut armor_writer = Armorer::new(message)
-            .kind(openpgp::armor::Kind::SecretKey)
-            .build()?;
-        cert.as_tsk().serialize(&mut armor_writer)?;
-        armor_writer.finalize()?;
-    }
-    let private_key = String::from_utf8(private_bytes)?;
-
-    Ok((public_key, private_key))
+    Ok(String::from_utf8(bytes)?)
 }

@@ -1,78 +1,58 @@
 <script lang="ts">
+  import { notify } from "$lib/utils/notify";
   import { onMount } from "svelte";
-  import { open } from "@tauri-apps/plugin-dialog";
-  import { invoke } from "@tauri-apps/api/core";
+  import { open, save } from "@tauri-apps/plugin-dialog";
   import type { KeyMetadata } from "$lib/types/key";
+  import { listKeys } from "$lib/api/keys";
+  import { encryptFile } from "$lib/api/crypto";
+  import { onFileDrop } from "$lib/utils/fileDrop";
   import { Button } from "$lib/components/ui";
   import { settings } from "$lib/stores/settings";
 
   // State
   let files: string[] = [];
-  let recipients: any[] = [];
+  let recipients: KeyMetadata[] = [];
   let selectedRecipients: string[] = [];
   let loading = false;
   let processing = false;
 
-  onMount(async () => {
-    loading = true;
-    try {
-      const result: any = await invoke("list_keys");
-      if (result.status === "ok" || result.success) {
-        recipients = result.data;
-      } else {
-        alert("Failed to load keys: " + result.message);
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      loading = false;
-    }
+  $: selectedName =
+    recipients.find((k) => k.fingerprint === selectedRecipients[0])?.user_id
+      .name || "Unknown";
+
+  onMount(() => {
+    loadRecipients();
+    return onFileDrop(addFiles);
   });
+
+  async function loadRecipients() {
+    loading = true;
+    const result = await listKeys();
+    if (result.success && result.data) {
+      recipients = result.data;
+    } else {
+      notify("Failed to load keys: " + result.error);
+    }
+    loading = false;
+  }
+
+  /** Adds paths, skipping duplicates. */
+  function addFiles(paths: string[]) {
+    files = [...new Set([...files, ...paths])];
+  }
 
   async function selectFile() {
     try {
-      const selected = await open({
-        multiple: true,
-        directory: false,
-      });
-
-      if (selected) {
-        if (Array.isArray(selected)) {
-          files = [...files, ...selected];
-        } else {
-          files = [...files, selected];
-        }
-      }
+      const selected = await open({ multiple: true, directory: false });
+      if (selected) addFiles(Array.isArray(selected) ? selected : [selected]);
     } catch (e) {
       console.error("File selection error:", e);
-      alert("Error selecting file: " + e);
+      notify("Error selecting file: " + e);
     }
   }
 
   function handleDragOver(e: DragEvent) {
     e.preventDefault();
-    e.stopPropagation();
-  }
-
-  function handleDrop(e: DragEvent) {
-    e.preventDefault();
-    e.stopPropagation();
-
-    if (
-      e.dataTransfer &&
-      e.dataTransfer.files &&
-      e.dataTransfer.files.length > 0
-    ) {
-      const droppedFiles = Array.from(e.dataTransfer.files);
-      const paths = droppedFiles
-        .map((f) => {
-          // @ts-ignore
-          return f.path || f.name;
-        })
-        .filter((p) => !!p);
-
-      files = [...files, ...paths];
-    }
   }
 
   function removeFile(index: number) {
@@ -80,30 +60,21 @@
   }
 
   function selectKey(fingerprint: string) {
-    // Toggle selection if you want multiple, but for now single selection per request?
-    // Actually code said "only one key", but logic was array. Let's support single for now based on UI loop?
-    // Wait, encrypt usually allows multiple recipients.
-    // The previous code had `selectedRecipients = [fingerprint]` implying single select.
-    // But let's check `selectKey` logic in old code: `selectedRecipients = [fingerprint];`. Yes single.
-    // Let's keep it single for now to match behavior, or allow toggle if valid.
-    // "selectKey" function in previous code did `selectedRecipients = [fingerprint]`.
     selectedRecipients = [fingerprint];
   }
 
   async function handleEncrypt() {
-    if (files.length === 0) return alert("Please select files to encrypt");
+    if (files.length === 0) return notify("Please select files to encrypt");
     if (selectedRecipients.length === 0)
-      return alert("Please select at least one recipient");
+      return notify("Please select at least one recipient");
 
+    processing = true;
+    const failed: string[] = [];
+    const failedPaths: string[] = [];
+    let done = 0;
     try {
-      processing = true;
-
-      const { save } = await import("@tauri-apps/plugin-dialog");
-      const { invoke } = await import("@tauri-apps/api/core");
-
       for (const filePath of files) {
-        const filename = filePath.split(/[\\/]/).pop() || "encrypted.gpg";
-
+        const filename = filePath.split(/[\\/]/).pop() || "encrypted";
         const savePath = await save({
           title: `Save Encrypted File for ${filename}`,
           defaultPath: `${filename}.gpg`,
@@ -111,29 +82,32 @@
             { name: "PGP Encrypted", extensions: ["gpg", "pgp", "asc"] },
           ],
         });
+        if (!savePath) continue;
 
-        if (!savePath) {
-          console.log("Save cancelled for", filePath);
-          continue;
-        }
-
-        const res: any = await invoke("encrypt_file_cmd", {
+        const res = await encryptFile({
           inputPath: filePath,
           outputPath: savePath,
           recipientFingerprints: selectedRecipients,
-          armor: savePath.endsWith(".asc"),
+          armor: savePath.toLowerCase().endsWith(".asc"),
         });
-
-        if (!res.success) {
-          alert(`Failed to encrypt ${filename}: ${res.error}`);
+        if (res.success) done++;
+        else {
+          failed.push(`${filename}: ${res.error}`);
+          failedPaths.push(filePath);
         }
       }
 
-      alert("Encryption process completed!");
-      files = [];
-      selectedRecipients = [];
+      if (failed.length > 0) {
+        notify(`Encrypted ${done} file(s). Failed:\n${failed.join("\n")}`);
+        // Keep only the failed files so the user can retry
+        files = failedPaths;
+      } else if (done > 0) {
+        notify(`Encrypted ${done} file(s) successfully!`, "info");
+        files = [];
+        selectedRecipients = [];
+      }
     } catch (e) {
-      alert("Encryption error: " + e);
+      notify("Encryption error: " + e);
     } finally {
       processing = false;
     }
@@ -176,7 +150,6 @@
 
       <div
         style="flex: 1; padding: 24px; display: flex; flex-direction: column;"
-        on:drop={handleDrop}
         on:dragover={handleDragOver}
         role="region"
         aria-label="File upload area"
@@ -338,8 +311,7 @@
       Encrypting <strong>{files.length}</strong> file(s) for
       <strong
         >{selectedRecipients.length > 0
-          ? recipients.find((k) => k.fingerprint === selectedRecipients[0])
-              ?.user_id.name || "Unknown"
+          ? selectedName
           : "No recipient"}</strong
       >
     </div>

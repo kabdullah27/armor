@@ -1,7 +1,7 @@
-use tauri::State;
-use crate::core::{config, storage::Vault};
+use crate::core::{config, storage::{self, Vault}};
 use crate::models::OperationResult;
 use std::path::PathBuf;
+use tauri::State;
 
 #[tauri::command]
 pub async fn get_db_path(vault: State<'_, Vault>) -> Result<OperationResult<String>, String> {
@@ -24,96 +24,53 @@ pub async fn complete_onboarding() -> Result<OperationResult<bool>, String> {
     Ok(OperationResult::ok(true))
 }
 
+/// Points the app at a new database location (takes effect after restart).
+/// If the target doesn't exist yet, a consistent copy of the live vault is written there.
+/// Returns the resolved database file path.
 #[tauri::command]
-pub async fn set_db_path(path: String) -> Result<OperationResult<bool>, String> {
+pub async fn set_db_path(path: String, vault: State<'_, Vault>) -> Result<OperationResult<String>, String> {
     log::info!("SET_DB_PATH command called with path: {}", path);
     let mut config = match config::load_config() {
         Ok(c) => c,
         Err(e) => return Ok(OperationResult::err(format!("Failed to load config: {}", e))),
     };
 
-    // Determine current DB path to copy from
-    let current_db_path = if let Some(ref p) = config.db_path {
-        std::path::PathBuf::from(p)
-    } else {
-        use directories::ProjectDirs;
-        let proj_dirs = ProjectDirs::from("com", "armor", "desktop")
-            .ok_or("Could not determine project directories")?;
-        proj_dirs.data_dir().join("armor.db")
+    let mut new_path = PathBuf::from(&path);
+    if new_path.is_dir() {
+        new_path = new_path.join("armor.db");
+    }
+
+    if new_path != vault.db_path && !new_path.exists() {
+        if let Err(e) = vault.backup_to(&new_path) {
+            return Ok(OperationResult::err(format!("Failed to migrate database to new location: {}", e)));
+        }
+    }
+
+    // Store None when pointing back at the default location
+    let path_str = new_path.to_string_lossy().to_string();
+    config.db_path = match storage::default_db_path() {
+        Ok(default) if default == new_path => None,
+        _ => Some(path_str.clone()),
     };
 
-    let mut new_path_buf = PathBuf::from(&path);
-    if new_path_buf.is_dir() {
-        new_path_buf = new_path_buf.join("armor.db");
-    }
-    
-    // Also update the string representation for the config
-    let path_str = new_path_buf.to_string_lossy().to_string();
-    if let Some(parent) = new_path_buf.parent() {
-        std::fs::create_dir_all(parent).map_err(|e| format!("Failed to create directory: {}", e))?;
+    if let Err(e) = config::save_config(&config) {
+        return Ok(OperationResult::err(format!("Failed to save config: {}", e)));
     }
 
-    // specific fix: If current DB exists and new one doesn't, copy it.
-    if current_db_path.exists() && !new_path_buf.exists() {
-        std::fs::copy(&current_db_path, &new_path_buf)
-            .map_err(|e| format!("Failed to migrate database to new location: {}", e))?;
-    }
-
-    config.db_path = Some(path_str);
-
-    crate::core::config::save_config(&config).map_err(|e| e.to_string())?;
-
-    Ok(OperationResult::ok(true))
+    Ok(OperationResult::ok(path_str))
 }
 
 #[tauri::command]
-pub async fn backup_db(
-    target_path: String,
-) -> Result<OperationResult<bool>, String> {
-    let config = crate::core::config::load_config().map_err(|e| e.to_string())?;
-    
-    // Determine current DB path
-    let current_db_path = if let Some(path_str) = config.db_path {
-        std::path::PathBuf::from(path_str)
-    } else {
-        use directories::ProjectDirs;
-        let proj_dirs = ProjectDirs::from("com", "armor", "desktop")
-            .ok_or("Could not determine project directories")?;
-        proj_dirs.data_dir().join("armor.db")
-    };
-
-    if !current_db_path.exists() {
-        return Ok(OperationResult::err("Current database file does not exist, cannot backup.".to_string()));
-    }
-
-    match std::fs::copy(&current_db_path, &target_path) {
+pub async fn backup_db(target_path: String, vault: State<'_, Vault>) -> Result<OperationResult<bool>, String> {
+    match vault.backup_to(&PathBuf::from(target_path)) {
         Ok(_) => Ok(OperationResult::ok(true)),
         Err(e) => Ok(OperationResult::err(format!("Failed to backup database: {}", e))),
     }
 }
 
 #[tauri::command]
-pub async fn restore_db(
-    source_path: String,
-) -> Result<OperationResult<bool>, String> {
-    let config = crate::core::config::load_config().map_err(|e| e.to_string())?;
-    
-    // Determine current DB path to overwrite
-    let current_db_path = if let Some(path_str) = config.db_path {
-        std::path::PathBuf::from(path_str)
-    } else {
-        use directories::ProjectDirs;
-        let proj_dirs = ProjectDirs::from("com", "armor", "desktop")
-            .ok_or("Could not determine project directories")?;
-        let data_dir = proj_dirs.data_dir();
-        if !data_dir.exists() {
-             std::fs::create_dir_all(data_dir).map_err(|e| e.to_string())?;
-        }
-        data_dir.join("armor.db")
-    };
-
-    // Copy source to current location (overwrite)
-    match std::fs::copy(&source_path, &current_db_path) {
+pub async fn restore_db(source_path: String, vault: State<'_, Vault>) -> Result<OperationResult<bool>, String> {
+    match vault.restore_from(&PathBuf::from(source_path)) {
         Ok(_) => Ok(OperationResult::ok(true)),
         Err(e) => Ok(OperationResult::err(format!("Failed to restore database: {}", e))),
     }

@@ -15,7 +15,7 @@ RUN apt-get update && apt-get install -y \
     libgtk-3-dev \
     libayatana-appindicator3-dev \
     librsvg2-dev \
-    libwebkit2gtk-4.0-dev \
+    libwebkit2gtk-4.1-dev \
     nettle-dev \
     llvm \
     clang \
@@ -35,7 +35,7 @@ RUN curl -fsSL https://bun.sh/install | bash
 WORKDIR /app
 
 # 5. Copy Dependencies Files first (for caching)
-COPY package.json bun.lockb ./
+COPY package.json bun.lock ./
 COPY src-tauri/Cargo.toml src-tauri/tauri.conf.json ./src-tauri/
 
 # Create dummy src-tauri/src/main.rs to build dependencies

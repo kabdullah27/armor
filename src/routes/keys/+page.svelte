@@ -1,7 +1,8 @@
 <script lang="ts">
+  import { notify } from "$lib/utils/notify";
   import { onMount } from "svelte";
   import { open, save } from "@tauri-apps/plugin-dialog";
-  import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
+  import { readFile, writeTextFile } from "@tauri-apps/plugin-fs";
   import {
     listKeys,
     deleteKey,
@@ -58,11 +59,11 @@
       if (result.success) {
         await loadKeys();
       } else {
-        alert("Failed to delete: " + (result.error || "Unknown error"));
+        notify("Failed to delete: " + (result.error || "Unknown error"));
       }
     } catch (e) {
       console.error("Delete error:", e);
-      alert("Error: " + String(e));
+      notify("Error: " + String(e));
     }
   }
 
@@ -79,17 +80,18 @@
       if (!path) return;
 
       loading = true;
-      const content = await readTextFile(path);
+      // Read raw bytes so binary (.gpg) keys import correctly, not just armored ones
+      const content = await readFile(path);
       const res = await importKey(content);
 
       if (res.success) {
         await loadKeys();
       } else {
-        alert("Failed to import key: " + res.error);
+        notify("Failed to import key: " + res.error);
       }
     } catch (e) {
       console.error("Import error:", e);
-      alert("Import error: " + e);
+      notify("Import error: " + e);
     } finally {
       loading = false;
     }
@@ -100,7 +102,7 @@
       const res = await exportKey(fingerprint, isPrivate);
 
       if (!res.success || !res.data) {
-        alert("Failed to get key content: " + (res.error || "Unknown error"));
+        notify("Failed to get key content: " + (res.error || "Unknown error"));
         return;
       }
 
@@ -114,35 +116,45 @@
       if (!savePath) return;
 
       await writeTextFile(savePath, res.data);
-      alert(`Key exported successfully to:\n${savePath}`);
+      notify(`Key exported successfully to:\n${savePath}`, "info");
     } catch (e) {
       console.error("Export error:", e);
-      alert("Error: " + String(e));
+      notify("Error: " + String(e));
     }
   }
 
-  async function handleGenerate() {
-    if (!name || !email) {
-      alert("Please fill in Name and Email");
-      return;
-    }
+  let formError = "";
 
-    if (passphrase !== confirmPass) {
-      alert("Passphrases do not match");
-      return;
+  /** Returns an error message for the generate form, or "" when valid. */
+  function validateForm(): string {
+    if (!name.trim()) return "Please enter a name.";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()))
+      return "Please enter a valid email address.";
+    if (passphrase !== confirmPass) return "Passphrases do not match.";
+    if (!neverExpire) {
+      if (!datePart) return "Please pick an expiry date, or choose Never expire.";
+      const ts = new Date(`${datePart}T${timePart || "00:00"}`).getTime();
+      if (!(ts > Date.now())) return "Expiry date must be in the future.";
     }
+    return "";
+  }
+
+  async function handleGenerate() {
+    if (generating) return;
+    formError = validateForm();
+    if (formError) return;
 
     try {
       generating = true;
       let expiryTimestamp = undefined;
-      if (!neverExpire && datePart && timePart) {
-        const dateTimeString = `${datePart}T${timePart}`;
+      if (!neverExpire && datePart) {
+        const dateTimeString = `${datePart}T${timePart || "00:00"}`;
         expiryTimestamp = Math.floor(new Date(dateTimeString).getTime() / 1000);
       }
 
       const res = await generateKey({
-        name,
-        email,
+        name: name.trim(),
+        email: email.trim(),
         comment,
         keyType,
         passphrase,
@@ -152,21 +164,20 @@
       if (res.success) {
         showGenerateModal = false;
         resetForm();
-        await listKeys().then((r) => {
-          if (r.success && r.data) keys = r.data;
-        });
+        await loadKeys();
       } else {
-        alert("Error generating key: " + res.error);
+        formError = res.error || "Failed to generate key.";
       }
     } catch (e) {
       console.error("Generation error:", e);
-      alert("An unexpected error occurred: " + e);
+      formError = "An unexpected error occurred: " + e;
     } finally {
       generating = false;
     }
   }
 
   function resetForm() {
+    formError = "";
     name = "";
     email = "";
     comment = "";
@@ -293,6 +304,7 @@
 {#if showGenerateModal}
   <Modal
     bind:show={showGenerateModal}
+    on:close={resetForm}
     title="Generate New PGP Key"
     maxWidth="600px"
   >
@@ -439,6 +451,14 @@
     </div>
 
     <svelte:fragment slot="footer">
+      {#if formError}
+        <p
+          role="alert"
+          style="margin: 0 auto 0 0; align-self: center; color: #dc2626; font-size: 14px;"
+        >
+          {formError}
+        </p>
+      {/if}
       <Button
         variant="secondary"
         on:click={() => {

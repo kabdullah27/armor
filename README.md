@@ -46,7 +46,7 @@ Before you begin, ensure you have the following installed:
 - **System Dependencies** (Ubuntu/Debian example):
   ```bash
   sudo apt update
-  sudo apt install libwebkit2gtk-4.0-dev \
+  sudo apt install libwebkit2gtk-4.1-dev \
       build-essential \
       curl \
       wget \
@@ -84,7 +84,7 @@ Before you begin, ensure you have the following installed:
 
     Or alternatively via bun:
     ```bash
-    bun run tauri:dev
+    bun run tauri dev
     ```
 
     The application window should open automatically.
@@ -96,13 +96,13 @@ Before you begin, ensure you have the following installed:
 This project includes a GitHub Actions CI/CD workflow. The easiest way to automatically build the application for **Windows, macOS, and Linux** is by creating a new release version (Tagging).
 
 1.  Ensure all code changes are committed and pushed to GitHub.
-2.  Create and push a new tag starting with the letter `v` (e.g., `v1.0.14`). Pushing this tag will **automatically trigger GitHub Actions to build the application** (`.exe`, `.dmg`, `.deb`, `.AppImage`).
+2.  Create and push a new tag starting with the letter `v` (e.g., `v1.0.15`). Pushing this tag will **automatically trigger GitHub Actions to build the application** (`.dmg` for macOS, `.exe`/`.msi` for Windows).
     ```bash
-    git tag v1.0.14
+    git tag v1.0.15
     git push origin --tags
     ```
 3.  Open the **Actions** tab in your GitHub repository to monitor the build process.
-4.  Once completed, all installer files (`.exe`, `.dmg`, `.deb`, etc.) will automatically appear and be available for download on the GitHub **Releases** page.
+4.  Once completed, all installer files (`.dmg`, `.exe`, `.msi`) will automatically appear and be available for download on the GitHub **Releases** page.
 
 ---
 
@@ -136,7 +136,7 @@ bun run tauri build
 
 #### 🐧 Linux
 
-**Requirements:** `libwebkit2gtk-4.0-dev`, `build-essential`, `curl`, `wget`, `libssl-dev`, `libgtk-3-dev`, `libayatana-appindicator3-dev`, `librsvg2-dev`.
+**Requirements:** `libwebkit2gtk-4.1-dev`, `build-essential`, `curl`, `wget`, `libssl-dev`, `libgtk-3-dev`, `libayatana-appindicator3-dev`, `librsvg2-dev`.
 
 ```bash
 bun run tauri build
@@ -180,7 +180,7 @@ bun run tauri build
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+Armor is licensed under the [GNU General Public License v3.0](LICENSE) (GPL-3.0-only). You may use, study, change and share it, but derivatives you distribute must stay open source under the same license.
 
 ```
 
